@@ -1,7 +1,3 @@
-Got it! Here's how you can update your **`README.md`** to include the GitHub repository link along with additional context on how to clone the repository and get started with the **SQLi Search Tool**.
-
----
-
 # SQLi Search Tool
 
 ## 🚀 Features
@@ -20,11 +16,34 @@ Before running the tool, ensure you have the following:
 1. **Python 3.x**
    - Download and install Python from [python.org/downloads](https://python.org/downloads).
 
-2. **Python Virtual Environment (Recommended)**
-   To isolate dependencies:
-   ```bash
-   python3 -m venv sqli_search_env
-   source sqli_search_env/bin/activate  # On Windows: sqli_search_env\Scripts\activate
+Sure! Here's just **step 2** from the **`README.md`**, where I provide the separate setup instructions for **Windows** and **Linux/macOS**:
+
+---
+
+### 2. Set Up Python Virtual Environment(Recommended)
+
+#### **For Linux/macOS:**
+
+In your terminal, create a virtual environment and activate it:
+
+```bash
+python3 -m venv sqli_search_env
+source sqli_search_env/bin/activate  # On Linux/macOS
+```
+
+#### **For Windows:**
+
+In your Command Prompt or PowerShell, create a virtual environment and activate it:
+
+```bash
+python -m venv sqli_search_env
+sqli_search_env\Scripts\activate  # On Windows
+```
+
+---
+
+This should help users set up the virtual environment depending on their operating system! Let me know if you need any further changes.
+
    ```
 
 3. **Install Dependencies**
