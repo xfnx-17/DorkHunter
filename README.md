@@ -169,5 +169,3 @@ This tool is provided "as-is" for educational and testing purposes only. The aut
 This **SQLi Search Tool** is provided to help identify common SQL injection vulnerabilities. Always use it responsibly and within the boundaries of the law.
 
 ---
-
-This update includes the repository URL for cloning, as well as the context for setting up and using the tool. You can now copy and paste this `README.md` to your GitHub repository.
