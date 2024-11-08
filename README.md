@@ -1,5 +1,3 @@
-Got it! Here's how you can update your **`README.md`** to include the GitHub repository link along with additional context on how to clone the repository and get started with the **SQLi Search Tool**.
-
 ---
 
 # SQLi Search Tool
