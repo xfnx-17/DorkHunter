@@ -1,90 +1,96 @@
+Got it! Here's how you can update your **`README.md`** to include the GitHub repository link along with additional context on how to clone the repository and get started with the **SQLi Search Tool**.
+
+---
+
 # SQLi Search Tool
 
 ## 🚀 Features
 
-- **Google Custom Search Integration**: Use Google's Custom Search API to find potentially vulnerable URLs via dorks (e.g., `inurl:product?id=`).
+- **Google Custom Search Integration**: Utilizes Google's Custom Search API to find potentially vulnerable URLs using search dorks (e.g., `inurl:product?id=`).
 - **Automated SQL Injection Testing**: Automatically checks URLs for common SQL injection vulnerabilities.
 - **Multi-threading Support**: Speeds up the scanning process by testing multiple URLs concurrently.
-- **DNS Resolution**: Validates domain names using Google's public DNS servers.
-- **CSV Report Generation**: Optionally save the list of vulnerable URLs to a CSV file.
+- **DNS Resolution**: Verifies domain names using Google's public DNS servers to ensure the validity of URLs.
+- **CSV Report Generation**: Optionally saves the list of vulnerable URLs to a CSV file for further analysis.
 - **User-Agent Rotation**: Prevents detection by rotating user-agent strings for each request.
 
 ## 📋 Requirements
 
-To run this tool, you'll need the following:
+Before running the tool, ensure you have the following:
 
 1. **Python 3.x**
    - Download and install Python from [python.org/downloads](https://python.org/downloads).
 
-2. **Create a Python Virtual Environment (Recommended)**
+2. **Python Virtual Environment (Recommended)**
    To isolate dependencies:
    ```bash
-   cd /path/to/your/project
-   python3 -m venv (name) 
-   ex.=> python3 -m venv test
+   python3 -m venv sqli_search_env
+   source sqli_search_env/bin/activate  # On Windows: sqli_search_env\Scripts\activate
+   ```
 
-    Activate the Virtual Environment:
-        On Windows:
+3. **Install Dependencies**
+   Install the required libraries by running:
+   ```bash
+   pip install -r requirements.txt
+   ```
+   Alternatively, install manually:
+   ```bash
+   pip install requests dnspython google-api-python-client
+   ```
 
-venv\Scripts\activate
+4. **Google Custom Search API Key & CSE ID**
+   - Get your **API key** from the [Google Cloud Console](https://console.cloud.google.com/).
+   - Create a **Custom Search Engine (CSE)** at [Google Custom Search](https://cse.google.com/cse/) and get your **CSE ID**.
 
-On Linux/macOS:
+5. **Optional Files for Enhanced Functionality**:
+   - `user_agents.txt`: A list of user-agent strings for rotating requests (optional).
+   - `scanned_urls.txt`: A file to keep track of URLs that have already been scanned (optional).
 
-        source (name)/bin/activate 
-        ex.=> source test/bin/activate
+---
 
-    Install Required Libraries
+## ⚙️ Setup
 
-pip install -r requirements.txt
+1. **Clone or Download the Repository**
 
-Or manually:
+   Clone the repository using Git:
+   ```bash
+   git clone https://github.com/xfnx-17/SQLiS.git
+   cd SQLiS
+   ```
 
-    pip install requests dnspython
+   Alternatively, you can download the Python script (`SQLiS.py`) directly and place it in your desired directory.
 
-    Google Custom Search API Key & CSE ID
-    #You can get these from the GOOGLE CUSTOM SEARCH ENGINE and the GOOGLE CLOUD CONSOLE.
-        Get your API key.
-        Create a Custom Search Engine (CSE) and get your CSE ID.
+2. **Configure Google API Key and CSE ID**
 
-    Optional Files for Enhanced Functionality:
-        user_agents.txt: List of user-agents for rotation (optional).
-        scanned_urls.txt: Track scanned URLs (optional).
+   On your first run, you will be prompted to enter your Google Custom Search API Key and CSE ID.
 
-⚙️ Setup
-1. Clone or Download the Repository
+---
 
-Clone the repo using Git:
+## 🎮 Usage
 
-git clone <repository-url>
-cd SQLiS
+### Running the Tool
 
-Alternatively, you can download the Python script directly and place it in your desired directory.
-2. Configure API Key and CSE ID
+To start the tool, run the following command:
 
-On first run, you'll be prompted to input your Google API key and CSE ID.
-🎮 Usage
-Running the Tool
-
-To start the tool, run:
-
+```bash
 python SQLiS.py
+```
 
-Steps:
+### Workflow:
+1. **Enter Google API Key & CSE ID**: When prompted, provide your Google API key and Custom Search Engine ID.
+   
+2. **Enter Dork**: Input a Google search dork to find potential vulnerable URLs (e.g., `inurl:login.php?id=`).
 
-    Enter API Key and CSE ID: You'll be asked to provide your Google API key and Custom Search Engine ID.
+3. **Set Maximum Vulnerable URLs**: Specify the maximum number of vulnerable URLs you want to find.
 
-    Enter Dork: Enter the search dork to find potential vulnerable URLs (e.g., inurl:login.php?id=).
+4. **Save the Report (Optional)**: Choose if you would like to save the results to a CSV file for later use.
 
-    Set Maximum Vulnerable URLs: Specify the maximum number of vulnerable URLs to find.
+5. **View Results**: Vulnerable URLs will be displayed in the terminal. If you chose to save the results, they will be saved in `report.csv`.
 
-    Save the Report (Optional): You can choose to save the results to a CSV file.
+6. **Re-run or Exit**: After the scan completes, you can choose to run another search or exit the tool.
 
-    View Results: Vulnerable URLs will be displayed in the terminal. If you chose to save the results, they will be saved in report.csv.
+### Example Output:
 
-    Re-run or Exit: After the scan, choose to run another search or exit.
-
-Example Output:
-
+```bash
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
       SQLi Search Tool
@@ -107,38 +113,61 @@ http://example.com/login.php?id=1
 http://example.com/login.php?id=2
 
 Results saved to report.csv
+```
 
+---
 
-📂 Files
+## 📂 Files
 
-    SQLiS.py: Main script for SQLi Search.
-    requirements.txt: List of required Python libraries.
-    user_agents.txt: (Optional) List of user-agent strings for rotating requests.
-    scanned_urls.txt: (Optional) Track URLs already scanned.
-    report.csv: (Optional) Saved CSV report of vulnerable URLs.
+- **SQLiS.py**: Main script for SQLi Search.
+- **requirements.txt**: List of required Python libraries.
+- **user_agents.txt**: (Optional) A list of user-agent strings for rotating requests.
+- **scanned_urls.txt**: (Optional) Tracks URLs that have already been scanned.
+- **report.csv**: (Optional) Saved CSV report of vulnerable URLs.
 
-🔐 Security Considerations
+---
 
-    API Key Protection: To avoid exposing your API key in the code, store sensitive credentials in environment variables instead of hardcoding them in the script.
-    Google API Limits: Be mindful of rate limits for Google Custom Search API. Check your usage in the Google Cloud Console.
+## 🔐 Security Considerations
 
-🌱 Contributing
+- **API Key Protection**: Always keep your Google API key secret. It's recommended to store sensitive credentials in environment variables instead of hardcoding them into the script.
+- **Google API Limits**: Be mindful of rate limits for the Google Custom Search API. Check your usage and limits in the [Google Cloud Console](https://console.cloud.google.com/).
+- **Responsible Use**: Always ensure you have permission to scan the websites you're testing. Use this tool ethically and in accordance with the law.
 
-We welcome contributions! If you find bugs or would like to suggest improvements, feel free to open an issue or create a pull request.
-📜 License
+---
 
-This tool is provided as-is for educational and testing purposes. The author assumes no responsibility for any misuse or legal consequences from using this tool. Always ensure you have permission before scanning any website.
+## 🌱 Contributing
 
-    No warranty: This tool is provided with no warranty, expressed or implied.
-    Responsible use: Please follow ethical guidelines and laws while using this tool.
+We welcome contributions! If you find bugs or have suggestions for improvements, feel free to open an issue or create a pull request.
 
-💡 Tips for Customizing or Extending the Program
+---
 
-    Custom Dorks: Modify the search queries to target other types of vulnerabilities or weaknesses.
-    Extend Payloads: Add more SQL injection payloads in the check_vulnerability function.
-    Enhanced Reporting: Include more details in reports, such as payloads used, server responses, etc.
+## 📜 License
 
-🛠️ Troubleshooting
+This tool is provided "as-is" for educational and testing purposes only. The author assumes no responsibility for any misuse or legal consequences from using this tool. Always ensure you have permission before scanning any website.
 
-    API Limits: If the Google API fails, ensure you're within the usage limits. Check the Google Cloud Console.
-    No Vulnerable URLs Found: Double-check your dork query to ensure it's valid and applicable to the target website.
+**No warranty**: This tool is provided with no warranty, express or implied.
+
+**Responsible Use**: Follow ethical guidelines and laws while using this tool.
+
+---
+
+## 💡 Tips for Customizing or Extending the Program
+
+- **Custom Dorks**: Modify the search queries to target different types of vulnerabilities (e.g., `inurl:admin.php?id=` or `inurl:product=ID`).
+- **Extend Payloads**: Add more SQL injection payloads in the `test_sqli()` function to test for additional injection techniques.
+- **Enhanced Reporting**: Include more details in reports, such as payloads used, server responses, or headers.
+
+---
+
+## 🛠️ Troubleshooting
+
+- **API Limits**: If the Google API fails, make sure you're within the usage limits by checking the Google Cloud Console.
+- **No Vulnerable URLs Found**: Ensure that your dork query is valid and properly formatted. If necessary, adjust the search term to ensure it is applicable to the target website.
+
+---
+
+This **SQLi Search Tool** is provided to help identify common SQL injection vulnerabilities. Always use it responsibly and within the boundaries of the law.
+
+---
+
+This update includes the repository URL for cloning, as well as the context for setting up and using the tool. You can now copy and paste this `README.md` to your GitHub repository.
