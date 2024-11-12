@@ -27,8 +27,8 @@ Sure! Here's just **step 2** from the **`README.md`**, where I provide the separ
 In your terminal, create a virtual environment and activate it:
 
 ```bash
-python3 -m venv Dorkhunter
-source Dorkhunter/bin/activate  # On Linux/macOS
+python3 -m venv Dorkhunter_env
+source Dorkhunter_env/bin/activate  # On Linux/macOS
 ```
 
 #### **For Windows:**
@@ -36,8 +36,8 @@ source Dorkhunter/bin/activate  # On Linux/macOS
 In your Command Prompt or PowerShell, create a virtual environment and activate it:
 
 ```bash
-python -m venv Dorkhunter
-Dorkhunter\Scripts\activate  # On Windows
+python -m venv Dorkhunter_env
+Dorkhunter_env\Scripts\activate  # On Windows
 ```
 
 ---
