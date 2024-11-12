@@ -44,7 +44,7 @@ Dorkhunter\Scripts\activate  # On Windows
 
 This should help users set up the virtual environment depending on their operating system! Let me know if you need any further changes.
 
-   ```
+
 
 3. **Install Dependencies**
    Install the required libraries by running:
@@ -73,7 +73,7 @@ This should help users set up the virtual environment depending on their operati
    Clone the repository using Git:
    ```bash
    git clone https://github.com/xfnx-17/DorkHunter.git
-   cd Dorkhunter
+   cd DorkHunter
    ```
 
    Alternatively, you can download the Python script (`Dorkhunter.py`) directly and place it in your desired directory.
@@ -91,7 +91,7 @@ This should help users set up the virtual environment depending on their operati
 To start the tool, run the following command:
 
 ```bash
-python DorkHunter.py
+python3 DorkHunter.py
 ```
 
 ### Workflow:
