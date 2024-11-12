@@ -27,8 +27,8 @@ Sure! Here's just **step 2** from the **`README.md`**, where I provide the separ
 In your terminal, create a virtual environment and activate it:
 
 ```bash
-python3 -m venv sqli_search_env
-source sqli_search_env/bin/activate  # On Linux/macOS
+python3 -m venv Dorkhunter
+source Dorkhunter/bin/activate  # On Linux/macOS
 ```
 
 #### **For Windows:**
@@ -36,8 +36,8 @@ source sqli_search_env/bin/activate  # On Linux/macOS
 In your Command Prompt or PowerShell, create a virtual environment and activate it:
 
 ```bash
-python -m venv sqli_search_env
-sqli_search_env\Scripts\activate  # On Windows
+python -m venv Dorkhunter
+Dorkhunter\Scripts\activate  # On Windows
 ```
 
 ---
@@ -72,11 +72,11 @@ This should help users set up the virtual environment depending on their operati
 
    Clone the repository using Git:
    ```bash
-   git clone https://github.com/xfnx-17/SQLiS.git
-   cd SQLiS
+   git clone https://github.com/xfnx-17/DorkHunter.git
+   cd Dorkhunter
    ```
 
-   Alternatively, you can download the Python script (`SQLiS.py`) directly and place it in your desired directory.
+   Alternatively, you can download the Python script (`Dorkhunter.py`) directly and place it in your desired directory.
 
 2. **Configure Google API Key and CSE ID**
 
@@ -138,7 +138,7 @@ Results saved to report.csv
 
 ## 📂 Files
 
-- **SQLiS.py**: Main script for SQLi Search.
+- **DorkHunter.py**: Main script for SQLi Search.
 - **requirements.txt**: List of required Python libraries.
 - **user_agents.txt**: (Optional) A list of user-agent strings for rotating requests.
 - **scanned_urls.txt**: (Optional) Tracks URLs that have already been scanned.
