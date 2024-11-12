@@ -210,7 +210,7 @@ def get_api_credentials():
     clear_console()
 
     text1 = "\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n" \
-            "\t\tSQLi Search\n" \
+            "\t\tDorkHunter\n" \
             "\t\t by => xfnx\n\n" \
             "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
 
