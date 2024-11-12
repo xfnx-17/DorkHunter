@@ -1,4 +1,4 @@
-# SQLi Search Tool
+# DorkHunter
 
 ## 🚀 Features
 
@@ -91,7 +91,7 @@ This should help users set up the virtual environment depending on their operati
 To start the tool, run the following command:
 
 ```bash
-python SQLiS.py
+python DorkHunter.py
 ```
 
 ### Workflow:
@@ -112,7 +112,7 @@ python SQLiS.py
 ```bash
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-      SQLi Search Tool
+      DorkHunter
       by => xfnx
 
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
