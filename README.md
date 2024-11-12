@@ -13,7 +13,7 @@
 
 Before running the tool, ensure you have the following:
 
-1. **Python 3.x**
+### 1. **Python 3.x**
    - Download and install Python from [python.org/downloads](https://python.org/downloads).
 
 Sure! Here's just **step 2** from the **`README.md`**, where I provide the separate setup instructions for **Windows** and **Linux/macOS**:
@@ -42,33 +42,9 @@ Dorkhunter\Scripts\activate  # On Windows
 
 ---
 
-This should help users set up the virtual environment depending on their operating system! Let me know if you need any further changes.
+ ## ⚙️ Setup
 
-
-
-3. **Install Dependencies**
-   Install the required libraries by running:
-   ```bash
-   pip install -r requirements.txt
-   ```
-   Alternatively, install manually:
-   ```bash
-   pip install requests dnspython google-api-python-client
-   ```
-
-4. **Google Custom Search API Key & CSE ID**
-   - Get your **API key** from the [Google Cloud Console](https://console.cloud.google.com/).
-   - Create a **Custom Search Engine (CSE)** at [Google Custom Search](https://cse.google.com/cse/) and get your **CSE ID**.
-
-5. **Optional Files for Enhanced Functionality**:
-   - `user_agents.txt`: A list of user-agent strings for rotating requests (optional).
-   - `scanned_urls.txt`: A file to keep track of URLs that have already been scanned (optional).
-
----
-
-## ⚙️ Setup
-
-1. **Clone or Download the Repository**
+### 3. **Clone or Download the Repository**
 
    Clone the repository using Git:
    ```bash
@@ -78,11 +54,34 @@ This should help users set up the virtual environment depending on their operati
 
    Alternatively, you can download the Python script (`Dorkhunter.py`) directly and place it in your desired directory.
 
-2. **Configure Google API Key and CSE ID**
+
+### 4. **Install Dependencies**
+   Install the required libraries by running:
+   ```bash
+   pip install -r requirements.txt
+   ```
+   Alternatively, install manually:
+   ```bash
+   pip install requests dnspython google-api-python-client
+   ```
+  
+
+### 5. **Configure Google API Key and CSE ID**
 
    On your first run, you will be prompted to enter your Google Custom Search API Key and CSE ID.
 
 ---
+**Google Custom Search API Key & CSE ID**
+   - Get your **API key** from the [Google Cloud Console](https://console.cloud.google.com/).
+   - Create a **Custom Search Engine (CSE)** at [Google Custom Search](https://cse.google.com/cse/) and get your **CSE ID**.
+
+### 6. **Optional Files for Enhanced Functionality**:
+   - `user_agents.txt`: A list of user-agent strings for rotating requests (optional).
+   - `scanned_urls.txt`: A file to keep track of URLs that have already been scanned (optional).
+
+---
+
+
 
 ## 🎮 Usage
 
