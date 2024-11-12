@@ -28,7 +28,7 @@ In your terminal, create a virtual environment and activate it:
 
 ```bash
 python3 -m venv Dorkhunter_env
-source Dorkhunter_env/bin/activate  # On Linux/macOS
+source Dorkhunter_env/bin/activate
 ```
 
 #### **For Windows:**
@@ -37,7 +37,7 @@ In your Command Prompt or PowerShell, create a virtual environment and activate 
 
 ```bash
 python -m venv Dorkhunter_env
-Dorkhunter_env\Scripts\activate  # On Windows
+Dorkhunter_env\Scripts\activate
 ```
 
 ---
