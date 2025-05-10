@@ -25,6 +25,7 @@ MAX_SEARCH_RESULTS = 100
 REQUEST_TIMEOUT = (10, 20)
 DELAY_BETWEEN_REQUESTS = (1, 3)
 CONSECUTIVE_TIMEOUT_THRESHOLD = 2
+MAX_API_PAGES = 10  # Google allows maximum 100 results (10 pages)
 
 # Enhanced SQL error patterns
 SQL_ERROR_PATTERNS = [
@@ -154,11 +155,12 @@ class SqlScan:
         return f"{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}"
 
     def dorking(self, dork: str, max_page: int) -> List[str]:
-        """Search Google for dorks"""
+        """Search Google for dorks with proper pagination handling"""
         search_url = "https://www.googleapis.com/customsearch/v1"
         urls = []
+        max_allowed_start = 90  # Google allows maximum start=90 (10 results per page * 10 pages)
         
-        for start in range(1, max_page * 10, 10):
+        for start in range(1, min(max_page * 10, max_allowed_start + 1), 10):
             params = {
                 'q': dork,
                 'key': self.api_key,
@@ -183,6 +185,12 @@ class SqlScan:
                 urls.extend(item['link'] for item in data.get('items', []))
                 time.sleep(random.uniform(*DELAY_BETWEEN_REQUESTS))
                 
+            except requests.exceptions.HTTPError as e:
+                if response.status_code == 400 and start > 90:
+                    logger.warning("Reached maximum allowed results (100)")
+                    break
+                logger.error(f"Search API error: {e}")
+                break
             except requests.exceptions.RequestException as e:
                 logger.error(f"Search API error: {e}")
                 break
@@ -420,7 +428,7 @@ class SqlScan:
         return False
 
     def find_vulnerable_urls(self, dork: str, max_vulnerable: int) -> List[str]:
-        """Main scanning method with clean output"""
+        """Main scanning method with proper pagination handling"""
         vulnerable_urls = []
         start = 1
     
@@ -428,8 +436,8 @@ class SqlScan:
         print(f"Starting scan for dork: {dork}")
         print("="*50 + "\n")
     
-        while len(vulnerable_urls) < max_vulnerable and start <= MAX_SEARCH_RESULTS:
-            print(f"[*] Processing page {start//10 + 1}...", end='\r')
+        while len(vulnerable_urls) < max_vulnerable and start <= MAX_API_PAGES:
+            print(f"[*] Processing page {start}...", end='\r')
         
             urls = self.dorking(dork, start)
             if not urls:
@@ -439,7 +447,7 @@ class SqlScan:
             valid_urls = self.extract_valid_urls(urls)
             if not valid_urls:
                 print("\n[!] No valid URLs found on this page")
-                start += 10
+                start += 1
                 continue
             
             with ThreadPoolExecutor(max_workers=5) as executor:
@@ -455,7 +463,7 @@ class SqlScan:
                 if len(vulnerable_urls) >= max_vulnerable:
                     break
                 
-            start += 10
+            start += 1
             time.sleep(random.uniform(*DELAY_BETWEEN_REQUESTS))
     
         print("\n" + "="*50)
