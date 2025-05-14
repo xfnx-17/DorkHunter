@@ -97,6 +97,11 @@ DorkHunter by xfnx
 - ⚖️ Use only on authorized targets
 - 📉 API requests are minimized to reduce Google quota usage
 
+🛠️ Tech Stack
+<div align="center"> <img src="https://skillicons.dev/icons?i=python,bash,github,git" alt="Tech Stack" width="300"/> </div>
+📊 GitHub Stats
+<div align="center"> <img width="400" src="https://github-readme-stats.vercel.app/api?username=xfnx-17&show_icons=true&theme=transparent&hide_border=true" alt="Profile Stats"> <img width="400" src="https://github-readme-streak-stats.herokuapp.com/?user=xfnx-17&theme=transparent&hide_border=true" alt="Contribution Streak"> <br> <img width="300" src="https://github-readme-stats.vercel.app/api/top-langs/?username=xfnx-17&layout=compact&theme=transparent&hide_border=true" alt="Top Languages"> </div>
+
 ## 🌟 Contributing
 
 Found a bug? Have an improvement?  
@@ -113,37 +118,3 @@ This project is for educational purposes only. Use responsibly.
 
 ---
 
-## 🛠️ Tech Stack
-
-<div align="center">
-  <img src="https://skillicons.dev/icons?i=python,cpp,java,html,css,js" alt="Tech Stack" />
-</div>
-
----
-
-## ⚡ GitHub Stats
-
-<div align="center">
-  <img width="400" src="https://github-readme-stats.vercel.app/api?username=xfnx-17&theme=transparent&count_private=true&show_icons=true&rank_icon=github&locale=en&hide_border=true" alt="GitHub Stats" />
-  <img width="400" src="https://github-readme-streak-stats.herokuapp.com/?user=xfnx-17&theme=transparent&hide_border=true" alt="GitHub Streak" />
-  <br>
-  <img width="325" src="https://github-readme-stats.vercel.app/api/top-langs/?username=xfnx-17&theme=transparent&layout=donut&langs_count=6&hide_border=true" alt="Top Languages" />
-</div>
-
----
-
-## 🌟 Activity Visualization
-
-<div align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/xfnx-17/xfnx-17/output/github-contribution-grid-snake-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/xfnx-17/xfnx-17/output/github-contribution-grid-snake.svg">
-    <img alt="Contribution Graph" src="https://raw.githubusercontent.com/xfnx-17/xfnx-17/output/github-contribution-grid-snake.svg" width="100%">
-  </picture>
-</div>
-
----
-
-<div align="center">
-  <img src="https://komarev.com/ghpvc/?username=xfnx-17&label=Profile+Views&color=9B59B6&style=flat&labelColor=00000000" alt="Visitor Count">
-</div>
