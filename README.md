@@ -28,13 +28,13 @@ cd DorkHunter
 ```
 
 ### 2. Create Virtual Environment
-```bash
 # Linux/macOS
+```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
-```
 # Windows
+```
 python -m venv venv
 venv\Scripts\activate
 ```
