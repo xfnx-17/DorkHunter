@@ -99,7 +99,7 @@ DorkHunter by xfnx
 
 ## 🛠️ Tech Stack
 
-<div align="center"> <img src="https://skillicons.dev/icons?i=python,vscode,github,git" alt="Tech Stack" width="300"/> </div>
+<div align="center"> <img src="https://skillicons.dev/icons?i=py,vscode,github,git,gcp" alt="Tech Stack" width="300"/> </div>
 
 ## 📊 GitHub Stats
 
