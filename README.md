@@ -32,7 +32,8 @@ cd DorkHunter
 # Linux/macOS
 python3 -m venv venv
 source venv/bin/activate
-
+```
+```
 # Windows
 python -m venv venv
 venv\Scripts\activate
@@ -106,5 +107,4 @@ Found a bug? Have an improvement?
 
 This project is for educational purposes only. Use responsibly.
 
-**Disclaimer:** The maintainers are not responsible for any misuse of this tool.
 ---
