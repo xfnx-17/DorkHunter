@@ -1,8 +1,4 @@
----
 ### DorkHunter
-
-[![License](https://img.shields.io/badge/License-Educational-blue.svg)](https://opensource.org/licenses/MIT)
----
 Advanced SQL Injection vulnerability scanner using Google dorking techniques
 
 ### 🚀 Features
@@ -111,7 +107,4 @@ Found a bug? Have an improvement?
 This project is for educational purposes only. Use responsibly.
 
 **Disclaimer:** The maintainers are not responsible for any misuse of this tool.
-
 ---
-```
-
