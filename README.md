@@ -1,13 +1,11 @@
-Here's the revised `README.md` with improved structure, clarity, and consistency:
-
-```markdown
-# DorkHunter
+---
+### DorkHunter
 
 [![License](https://img.shields.io/badge/License-Educational-blue.svg)](https://opensource.org/licenses/MIT)
-
+---
 Advanced SQL Injection vulnerability scanner using Google dorking techniques
 
-## 🚀 Features
+### 🚀 Features
 
 - **Google Custom Search Integration**: Find vulnerable URLs using search dorks (e.g., `inurl:product?id=`)
 - **Automated SQLi Testing**: Comprehensive checks for error-based, boolean-based, and time-based SQLi
@@ -15,8 +13,8 @@ Advanced SQL Injection vulnerability scanner using Google dorking techniques
 - **Smart Detection**: Dynamic parameter analysis and payload rotation
 - **CSV Reporting**: Export results for further analysis
 - **Stealth Mode**: Randomized delays and user-agent rotation
-
-## 📋 Requirements
+---
+### 📋 Requirements
 
 ### 1. Python 3.8+
 - [Download Python](https://www.python.org/downloads/)
@@ -24,8 +22,8 @@ Advanced SQL Injection vulnerability scanner using Google dorking techniques
 ### 2. Google API Credentials
 - Custom Search JSON API Key
 - Custom Search Engine (CSE) ID
-
-## ⚙️ Setup
+---
+###⚙️ Setup
 
 ### 1. Clone Repository
 ```bash
@@ -54,7 +52,7 @@ pip install -r requirements.txt
 2. Create [Custom Search Engine](https://cse.google.com/cse/)
 3. Run script and enter credentials when prompted
 
-## 🎮 Usage
+### 🎮 Usage
 
 ```bash
 python DorkHunter.py
