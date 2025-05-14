@@ -98,14 +98,12 @@ DorkHunter by xfnx
 - 📉 API requests are minimized to reduce Google quota usage
 
 ## 🛠️ Tech Stack
----
+
 <div align="center"> <img src="https://skillicons.dev/icons?i=python,vscode,github,git" alt="Tech Stack" width="300"/> </div>
----
 
 ## 📊 GitHub Stats
----
+
 <div align="center"> <img width="300" src="https://github-readme-stats.vercel.app/api/top-langs/?username=xfnx-17&layout=compact&theme=transparent&hide_border=true" alt="Top Languages"> </div>
----
 
 ## 🌟 Contributing
 
