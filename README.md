@@ -81,12 +81,13 @@ DorkHunter by xfnx
 ### 📂 File Structure
 
 ```
-DorkHunter/
-├── DorkHunter.py          # Main application
-├── requirements.txt       # Dependency list
-├── user_agents.txt        # [Optional] User-agent database
-├── scanned_urls.txt       # [Optional] Scan history
-└── report.csv             # Generated vulnerability report
+📂 DorkHunter/
+├── 📄 DorkHunter.py                             - Main scanner script
+├── 📄 LICENSE                                   - MIT/GPL? License file  
+├── 📄 README.md                                 - Documentation
+├── 📄 payloads.txt                              - SQLi payload database
+├── 📄 requirements.txt                          - Python dependencies
+└── 📄 user_agents.txt                           - Browser signature rotations
 ```
 
 ## 🔐 Security Notes
