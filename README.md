@@ -1,189 +1,119 @@
+Here's the revised `README.md` with improved structure, clarity, and consistency:
+
+```markdown
 # DorkHunter
+
+[![License](https://img.shields.io/badge/License-Educational-blue.svg)](https://opensource.org/licenses/MIT)
+
+Advanced SQL Injection vulnerability scanner using Google dorking techniques
 
 ## 🚀 Features
 
-- **Google Custom Search Integration**: Utilizes Google's Custom Search API to find potentially vulnerable URLs using search dorks (e.g., `inurl:product?id=`).
-- **Automated SQL Injection Testing**: Automatically checks URLs for common SQL injection vulnerabilities.
-- **Multi-threading Support**: Speeds up the scanning process by testing multiple URLs concurrently.
-- **DNS Resolution**: Verifies domain names using Google's public DNS servers to ensure the validity of URLs.
-- **CSV Report Generation**: Optionally saves the list of vulnerable URLs to a CSV file for further analysis.
-- **User-Agent Rotation**: Prevents detection by rotating user-agent strings for each request.
+- **Google Custom Search Integration**: Find vulnerable URLs using search dorks (e.g., `inurl:product?id=`)
+- **Automated SQLi Testing**: Comprehensive checks for error-based, boolean-based, and time-based SQLi
+- **Concurrent Scanning**: Multi-threaded architecture for efficient scanning
+- **Smart Detection**: Dynamic parameter analysis and payload rotation
+- **CSV Reporting**: Export results for further analysis
+- **Stealth Mode**: Randomized delays and user-agent rotation
 
 ## 📋 Requirements
 
-Before running the tool, ensure you have the following:
+### 1. Python 3.8+
+- [Download Python](https://www.python.org/downloads/)
 
-### 1. **Python 3.x**
-   - Download and install Python from [python.org/downloads](https://python.org/downloads).
+### 2. Google API Credentials
+- Custom Search JSON API Key
+- Custom Search Engine (CSE) ID
 
-Sure! Here's just **step 2** from the **`README.md`**, where I provide the separate setup instructions for **Windows** and **Linux/macOS**:
+## ⚙️ Setup
 
----
-
-### 2. Set Up Python Virtual Environment(Recommended)
-
-#### **For Linux/macOS:**
-
-In your terminal, create a virtual environment and activate it:
-
+### 1. Clone Repository
 ```bash
-python3 -m venv Dorkhunter_env
-source Dorkhunter_env/bin/activate
+git clone https://github.com/xfnx-17/DorkHunter.git
+cd DorkHunter
 ```
 
-#### **For Windows:**
-
-In your Command Prompt or PowerShell, create a virtual environment and activate it:
-
+### 2. Create Virtual Environment
 ```bash
-python -m venv Dorkhunter_env
-Dorkhunter_env\Scripts\activate
+# Linux/macOS
+python3 -m venv venv
+source venv/bin/activate
+
+# Windows
+python -m venv venv
+venv\Scripts\activate
 ```
 
----
+### 3. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
 
- ## ⚙️ Setup
-
-### 3. **Clone or Download the Repository**
-
-   Clone the repository using Git:
-   ```bash
-   git clone https://github.com/xfnx-17/DorkHunter.git
-   cd DorkHunter
-   ```
-
-   Alternatively, you can download the Python script (`Dorkhunter.py`) directly and place it in your desired directory.
-
-
-### 4. **Install Dependencies**
-   Install the required libraries by running:
-   ```bash
-   pip install -r requirements.txt
-   ```
-   Alternatively, install manually:
-   ```bash
-   pip install requests dnspython google-api-python-client
-   ```
-  
-
-### 5. **Configure Google API Key and CSE ID**
-
-   On your first run, you will be prompted to enter your Google Custom Search API Key and CSE ID.
-
----
-**Google Custom Search API Key & CSE ID**
-   - Get your **API key** from the [Google Cloud Console](https://console.cloud.google.com/).
-   - Create a **Custom Search Engine (CSE)** at [Google Custom Search](https://cse.google.com/cse/) and get your **CSE ID**.
-
-### 6. **Optional Files for Enhanced Functionality**:
-   - `user_agents.txt`: A list of user-agent strings for rotating requests (optional).
-   - `scanned_urls.txt`: A file to keep track of URLs that have already been scanned (optional).
-
----
-
-
+### 4. Configure API Credentials
+1. Get [Google API Key](https://console.cloud.google.com/)
+2. Create [Custom Search Engine](https://cse.google.com/cse/)
+3. Run script and enter credentials when prompted
 
 ## 🎮 Usage
 
-### Running the Tool
-
-To start the tool, run the following command:
-
 ```bash
-python3 DorkHunter.py
+python DorkHunter.py
 ```
 
-### Workflow:
-1. **Enter Google API Key & CSE ID**: When prompted, provide your Google API key and Custom Search Engine ID.
-   
-2. **Enter Dork**: Input a Google search dork to find potential vulnerable URLs (e.g., `inurl:login.php?id=`).
+**Workflow:**
+1. Enter Google API credentials
+2. Input search dork (e.g., `inurl:login.php?id=`)
+3. Set maximum vulnerable URLs to find
+4. Choose to save results (CSV report)
+5. Review detected vulnerabilities
 
-3. **Set Maximum Vulnerable URLs**: Specify the maximum number of vulnerable URLs you want to find.
+**Example Output:**
+```text
+██████╗  ██████╗ ██████╗ ██╗  ██╗██╗  ██╗██╗   ██╗███╗   ██╗████████╗███████╗██████╗
+██╔══██╗██╔═══██╗██╔══██╗██║ ██╔╝██║  ██║██║   ██║████╗  ██║╚══██╔══╝██╔════╝██╔══██╗
+██║  ██║██║   ██║██████╔╝█████╔╝ ███████║██║   ██║██╔██╗ ██║   ██║   █████╗  ██████╔╝
+██║  ██║██║   ██║██╔══██╗██╔═██╗ ██╔══██║██║   ██║██║╚██╗██║   ██║   ██╔══╝  ██╔══██╗
+██████╔╝╚██████╔╝██║  ██║██║  ██╗██║  ██║╚██████╔╝██║ ╚████║   ██║   ███████╗██║  ██║
+╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝
 
-4. **Save the Report (Optional)**: Choose if you would like to save the results to a CSV file for later use.
+DorkHunter by xfnx
 
-5. **View Results**: Vulnerable URLs will be displayed in the terminal. If you chose to save the results, they will be saved in `report.csv`.
-
-6. **Re-run or Exit**: After the scan completes, you can choose to run another search or exit the tool.
-
-### Example Output:
-
-```bash
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-      DorkHunter
-      by => xfnx
-
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-Before using the tool, you must provide your Google Custom Search API key and Custom Search Engine ID.
-
-Your Google Custom Search API key: <input>
-Your Google Custom Search Engine ID: <input>
-
-Dork (example="inurl:product?id="): inurl:login.php?id=
-Max Vuln (Number): 5
-Want the result to be saved (Y/N): Y
-
-Scanning started...
-[VULNERABLE] Vulnerable URLs found:
-http://example.com/login.php?id=1
-http://example.com/login.php?id=2
-
-Results saved to report.csv
+[+] Found 2 vulnerable URLs:
+1. http://vuln-site.com/product?id=1'--
+2. http://test-store.com/user?id=2' WAITFOR DELAY '0:0:5'--
 ```
 
----
+## 📂 File Structure
 
-## 📂 Files
+```
+DorkHunter/
+├── DorkHunter.py          # Main application
+├── requirements.txt       # Dependency list
+├── user_agents.txt        # [Optional] User-agent database
+├── scanned_urls.txt       # [Optional] Scan history
+└── report.csv             # Generated vulnerability report
+```
 
-- **DorkHunter.py**: Main script for SQLi Search.
-- **requirements.txt**: List of required Python libraries.
-- **user_agents.txt**: (Optional) A list of user-agent strings for rotating requests.
-- **scanned_urls.txt**: (Optional) Tracks URLs that have already been scanned.
-- **report.csv**: (Optional) Saved CSV report of vulnerable URLs.
+## 🔐 Security Notes
 
----
+- 🔒 API keys are never stored or transmitted
+- ⚠️ Respect robots.txt and website terms of service
+- ⚖️ Use only on authorized targets
+- 📉 API requests are minimized to reduce Google quota usage
 
-## 🔐 Security Considerations
+## 🌟 Contributing
 
-- **API Key Protection**: Always keep your Google API key secret. It's recommended to store sensitive credentials in environment variables instead of hardcoding them into the script.
-- **Google API Limits**: Be mindful of rate limits for the Google Custom Search API. Check your usage and limits in the [Google Cloud Console](https://console.cloud.google.com/).
-- **Responsible Use**: Always ensure you have permission to scan the websites you're testing. Use this tool ethically and in accordance with the law.
-
----
-
-## 🌱 Contributing
-
-We welcome contributions! If you find bugs or have suggestions for improvements, feel free to open an issue or create a pull request.
-
----
+Found a bug? Have an improvement?  
+1. Fork the repository  
+2. Create your feature branch  
+3. Submit a pull request
 
 ## 📜 License
 
-This tool is provided "as-is" for educational and testing purposes only. The author assumes no responsibility for any misuse or legal consequences from using this tool. Always ensure you have permission before scanning any website.
+This project is for educational purposes only. Use responsibly.
 
-**No warranty**: This tool is provided with no warranty, express or implied.
-
-**Responsible Use**: Follow ethical guidelines and laws while using this tool.
+**Disclaimer:** The maintainers are not responsible for any misuse of this tool.
 
 ---
+```
 
-## 💡 Tips for Customizing or Extending the Program
-
-- **Custom Dorks**: Modify the search queries to target different types of vulnerabilities (e.g., `inurl:admin.php?id=` or `inurl:product=ID`).
-- **Extend Payloads**: Add more SQL injection payloads in the `test_sqli()` function to test for additional injection techniques.
-- **Enhanced Reporting**: Include more details in reports, such as payloads used, server responses, or headers.
-
----
-
-## 🛠️ Troubleshooting
-
-- **API Limits**: If the Google API fails, make sure you're within the usage limits by checking the Google Cloud Console.
-- **No Vulnerable URLs Found**: Ensure that your dork query is valid and properly formatted. If necessary, adjust the search term to ensure it is applicable to the target website.
-
----
-
-This **SQLi Search Tool** is provided to help identify common SQL injection vulnerabilities. Always use it responsibly and within the boundaries of the law.
-
----
