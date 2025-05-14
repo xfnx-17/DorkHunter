@@ -116,8 +116,4 @@ Found a bug? Have an improvement?
 
 This project is for educational purposes only. Use responsibly.
 
----
-[Previous README content...]
-
----
 
