@@ -1,4 +1,4 @@
-### DorkHunter
+# DorkHunter
 Advanced SQL Injection vulnerability scanner using Google dorking techniques
 
 ### 🚀 Features
@@ -10,7 +10,7 @@ Advanced SQL Injection vulnerability scanner using Google dorking techniques
 - **CSV Reporting**: Export results for further analysis
 - **Stealth Mode**: Randomized delays and user-agent rotation
 ---
-### 📋 Requirements
+## 📋 Requirements
 
 ### 1. Python 3.8+
 - [Download Python](https://www.python.org/downloads/)
@@ -19,7 +19,7 @@ Advanced SQL Injection vulnerability scanner using Google dorking techniques
 - Custom Search JSON API Key
 - Custom Search Engine (CSE) ID
 ---
-###⚙️ Setup
+## ⚙️ Setup
 
 ### 1. Clone Repository
 ```bash
@@ -28,12 +28,12 @@ cd DorkHunter
 ```
 
 ### 2. Create Virtual Environment
-# Linux/macOS
+#### Linux/macOS
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
-# Windows
+#### Windows
 ```
 python -m venv venv
 venv\Scripts\activate
@@ -49,7 +49,7 @@ pip install -r requirements.txt
 2. Create [Custom Search Engine](https://cse.google.com/cse/)
 3. Run script and enter credentials when prompted
 
-### 🎮 Usage
+## 🎮 Usage
 
 ```bash
 python DorkHunter.py
@@ -78,7 +78,7 @@ DorkHunter by xfnx
 2. http://test-store.com/user?id=2' WAITFOR DELAY '0:0:5'--
 ```
 
-## 📂 File Structure
+### 📂 File Structure
 
 ```
 DorkHunter/
