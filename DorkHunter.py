@@ -1,17 +1,3 @@
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-SQLi Dork Scanner (Secure TLS Edition)
-
-- Enforces TLS 1.2+ (prefers TLS 1.3 when available)
-- Keeps certificate verification ON
-- Uses a hardened HTTP adapter and retries
-- Supports Google Custom Search JSON API for dorking
-
-Use only for authorized security testing.
-"""
-
 import os
 import random
 import re
