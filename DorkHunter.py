@@ -5,14 +5,15 @@ import time
 import ssl
 import logging
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.ssl_ import create_urllib3_context
+from urllib3.util.retry import Retry
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 import csv
 from typing import List, Set, Dict, Optional
 from urllib3.util.ssl_ import create_urllib3_context
 import warnings
-from urllib3.exceptions import InsecureRequestWarning
-warnings.filterwarnings("ignore", category=InsecureRequestWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 DEFAULT_SCANNED_URLS_FILE = 'scanned_urls.txt'
@@ -48,17 +49,41 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-logger.propagate = False  # Prevent logging to console
+logger.propagate = False
 
-class CustomSSLAdapter(requests.adapters.HTTPAdapter):
-    """Custom SSL adapter for modern TLS"""
+class CustomSSLAdapter(HTTPAdapter):
+    
+    def __init__(self, *args, **kwargs):
+        self.ssl_context = create_urllib3_context()
+        self.ssl_context.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
+        self.ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
+        if hasattr(ssl.TLSVersion, "TLSv1_3"):
+            self.ssl_context.maximum_version = ssl.TLSVersion.TLSv1_3
+
+        
+        try:
+            self.ssl_context.options |= ssl.OP_NO_COMPRESSION
+        except Exception:
+            pass
+        try:
+            self.ssl_context.set_ciphers(
+                "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:"
+                "TLS_AES_128_GCM_SHA256:ECDHE+AESGCM:!SHA1:!MD5:!DES:!3DES:!RC4"
+            )
+        except Exception:
+            pass
+
+        super().__init__(*args, **kwargs)
+
     def init_poolmanager(self, *args, **kwargs):
-        context = create_urllib3_context()
-        context.options |= ssl.OP_NO_SSLv2
-        context.options |= ssl.OP_NO_SSLv3
-        context.minimum_version = ssl.TLSVersion.TLSv1_2
-        kwargs['ssl_context'] = context
+        kwargs["ssl_context"] = self.ssl_context
         return super().init_poolmanager(*args, **kwargs)
+
+    def proxy_manager_for(self, *args, **kwargs):
+        kwargs["ssl_context"] = self.ssl_context
+        return super().proxy_manager_for(*args, **kwargs)
+
+
 
 class SqlScan:
     def __init__(self, api_key: str, cse_id: str):
@@ -79,20 +104,20 @@ class SqlScan:
         self.quiet_mode = False
 
     def _configure_session(self):
-        """Configure requests session with retries and SSL support"""
         session = requests.Session()
-        
-        # Modern SSL configuration
-        session.mount('https://', CustomSSLAdapter())
-        
-        # Configure retry strategy
-        retry_strategy = requests.adapters.Retry(
+
+        retry_strategy = Retry(
             total=3,
             backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504]
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=frozenset(["HEAD", "GET", "OPTIONS"])
         )
-        session.mount('https://', requests.adapters.HTTPAdapter(max_retries=retry_strategy))
-        
+    
+        tls_adapter = CustomSSLAdapter(max_retries=retry_strategy)
+    
+        session.mount("https://", tls_adapter)
+        session.mount("http://", HTTPAdapter(max_retries=retry_strategy))
+    
         return session
 
     def initialize_components(self):
@@ -280,31 +305,37 @@ class SqlScan:
         except Exception:
             return False
 
+    
     def _make_request(self, url: str) -> Optional[str]:
-        """Make HTTP request without printing warnings"""
         try:
             response = self.session.get(
                 url,
                 headers=self.get_random_headers(),
                 timeout=REQUEST_TIMEOUT,
                 allow_redirects=False,
-                verify=False
+                verify=True
             )
             return response.text
         except Exception:
-            return None  # No error message printed
+            return None
 
+    
     def _make_request_with_ssl_fallback(self, url: str) -> Optional[str]:
-        """Try alternative SSL configurations"""
         try:
             ctx = ssl.create_default_context()
-            ctx.minimum_version = ssl.TLSVersion.TLSv1
-            
-            response = requests.get(
+            ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+            if hasattr(ssl.TLSVersion, "TLSv1_3"):
+                ctx.maximum_version = ssl.TLSVersion.TLSv1_3
+            try:
+                ctx.options |= ssl.OP_NO_COMPRESSION
+            except Exception:
+                pass
+    
+            response = self.session.get(
                 url,
                 headers=self.get_random_headers(),
                 timeout=15,
-                verify=False,
+                verify=True,
                 ssl_context=ctx
             )
             return response.text
