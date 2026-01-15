@@ -1,3 +1,4 @@
+
 import os
 import random
 import re
@@ -5,15 +6,15 @@ import time
 import ssl
 import logging
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.ssl_ import create_urllib3_context
-from urllib3.util.retry import Retry
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 import csv
-from typing import List, Set, Dict, Optional
+from typing import List, Set, Optional
 from urllib3.util.ssl_ import create_urllib3_context
+from urllib3.util.retry import Retry
 import warnings
+
+# Remove insecure warning suppression (we keep verification ON now)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 DEFAULT_SCANNED_URLS_FILE = 'scanned_urls.txt'
@@ -49,10 +50,13 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-logger.propagate = False
+logger.propagate = False  # Prevent logging to console
 
-class CustomSSLAdapter(HTTPAdapter):
-    
+
+# ✅ Hardened SSL Adapter
+class CustomSSLAdapter(requests.adapters.HTTPAdapter):
+    """HTTPAdapter with hardened SSLContext (TLS 1.2+) and retries."""
+
     def __init__(self, *args, **kwargs):
         self.ssl_context = create_urllib3_context()
         self.ssl_context.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
@@ -60,11 +64,11 @@ class CustomSSLAdapter(HTTPAdapter):
         if hasattr(ssl.TLSVersion, "TLSv1_3"):
             self.ssl_context.maximum_version = ssl.TLSVersion.TLSv1_3
 
-        
         try:
             self.ssl_context.options |= ssl.OP_NO_COMPRESSION
         except Exception:
             pass
+
         try:
             self.ssl_context.set_ciphers(
                 "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:"
@@ -82,7 +86,6 @@ class CustomSSLAdapter(HTTPAdapter):
     def proxy_manager_for(self, *args, **kwargs):
         kwargs["ssl_context"] = self.ssl_context
         return super().proxy_manager_for(*args, **kwargs)
-
 
 
 class SqlScan:
@@ -104,34 +107,30 @@ class SqlScan:
         self.quiet_mode = False
 
     def _configure_session(self):
+        """Configure requests session with retries and strong TLS."""
         session = requests.Session()
-
         retry_strategy = Retry(
             total=3,
             backoff_factor=1,
             status_forcelist=[429, 500, 502, 503, 504],
             allowed_methods=frozenset(["HEAD", "GET", "OPTIONS"])
         )
-    
         tls_adapter = CustomSSLAdapter(max_retries=retry_strategy)
-    
         session.mount("https://", tls_adapter)
-        session.mount("http://", HTTPAdapter(max_retries=retry_strategy))
-    
+        session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retry_strategy))
         return session
 
     def initialize_components(self):
-        """Load all required components"""
         self.scanned_urls = self.load_scanned_urls(DEFAULT_SCANNED_URLS_FILE)
         self.user_agents = self.load_file(DEFAULT_USER_AGENT_FILE)
         self.payloads = self.load_file(DEFAULT_PAYLOADS_FILE)
-        
+
         if not self.user_agents:
             self.user_agents = [
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
                 "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15"
             ]
-            
+
         if not self.payloads:
             self.payloads = [
                 "'",
@@ -142,28 +141,23 @@ class SqlScan:
             ]
 
     def load_file(self, file_path: str) -> List[str]:
-        """Load a file line by line"""
         if not os.path.exists(file_path):
             logger.warning(f"File not found: {file_path}")
             return []
-            
         with open(file_path, 'r', encoding='utf-8') as f:
             return [line.strip() for line in f if line.strip()]
 
     def load_scanned_urls(self, scanned_urls_file: str) -> Set[str]:
-        """Load previously scanned URLs"""
         if os.path.exists(scanned_urls_file):
-            with open(scanned_urls_file, 'r') as f:
+           anned_urls_file, 'r') as f:
                 return {line.strip() for line in f}
         return set()
 
     def save_scanned_url(self, url: str, scanned_urls_file: str):
-        """Save a URL to the scanned list"""
         with open(scanned_urls_file, 'a') as f:
             f.write(url + '\n')
 
     def get_random_headers(self):
-        """Generate realistic browser headers"""
         return {
             'User-Agent': random.choice(self.user_agents),
             'Accept': 'text/html,application/xhtml+xml',
@@ -176,136 +170,8 @@ class SqlScan:
         }
 
     def _generate_random_ip(self) -> str:
-        """Generate random IP for header rotation"""
         return f"{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}"
 
-    def dorking(self, dork: str, max_page: int) -> List[str]:
-        """Search Google for dorks with proper pagination handling"""
-        search_url = "https://www.googleapis.com/customsearch/v1"
-        urls = []
-        max_allowed_start = 90  # Google allows maximum start=90 (10 results per page * 10 pages)
-        
-        for start in range(1, min(max_page * 10, max_allowed_start + 1), 10):
-            params = {
-                'q': dork,
-                'key': self.api_key,
-                'cx': self.cse_id,
-                'start': start,
-                'num': 10
-            }
-            
-            try:
-                response = self.session.get(
-                    search_url,
-                    headers=self.get_random_headers(),
-                    params=params,
-                    timeout=REQUEST_TIMEOUT
-                )
-                response.raise_for_status()
-                
-                data = response.json()
-                if 'items' not in data:
-                    break
-                    
-                urls.extend(item['link'] for item in data.get('items', []))
-                time.sleep(random.uniform(*DELAY_BETWEEN_REQUESTS))
-                
-            except requests.exceptions.HTTPError as e:
-                if response.status_code == 400 and start > 90:
-                    logger.warning("Reached maximum allowed results (100)")
-                    break
-                logger.error(f"Search API error: {e}")
-                break
-            except requests.exceptions.RequestException as e:
-                logger.error(f"Search API error: {e}")
-                break
-                
-        return urls
-
-    def extract_valid_urls(self, urls: List[str]) -> List[str]:
-        """Filter URLs with SQLi parameters"""
-        valid_urls = []
-        for url in urls:
-            if url in self.scanned_urls:
-                continue
-            if self.is_valid_url(url):
-                valid_urls.append(url)
-        return valid_urls
-
-    def is_valid_url(self, url: str) -> bool:
-        """Check if URL has SQLi-prone parameters"""
-        try:
-            parsed = urlparse(url)
-            query = parse_qs(parsed.query)
-            
-            sql_params = [
-                'id', 'item', 'product', 'user', 'uid', 'pid', 
-                'page', 'category', 'order', 'search', 'filter'
-            ]
-            
-            return any(p in query for p in sql_params)
-        except Exception:
-            return False
-
-    def test_connection(self, url: str) -> bool:
-        """Verify we can reach the target"""
-        try:
-            response = self.session.head(
-                url,
-                headers=self.get_random_headers(),
-                timeout=10,
-                allow_redirects=False
-            )
-            return response.status_code < 400
-        except Exception:
-            return False
-
-    def check_vulnerability(self, url: str) -> Optional[bool]:
-        """Enhanced vulnerability checking"""
-        try:
-            if not self.test_connection(url):
-                logger.warning(f"Connection failed to {url}")
-                return None
-                
-            parsed = urlparse(url)
-            query = parse_qs(parsed.query)
-            
-            if not query:
-                return None
-                
-            param = list(query.keys())[0]
-            
-            # First check if parameters are dynamic
-            if not self._is_parameter_dynamic(url, param):
-                return False
-                
-            # Then test with payloads
-            return self._test_payloads(url, parsed, query)
-            
-        except Exception as e:
-            logger.error(f"Error checking {url}: {e}")
-            return None
-
-    def _is_parameter_dynamic(self, url: str, param: str) -> bool:
-        """Check if parameter affects output"""
-        try:
-            # Test with original value
-            original = self._make_request(url)
-            if original is None:
-                return False
-                
-            # Test with altered value
-            altered = self._make_request(f"{url}&{param}=xyz123")
-            if altered is None:
-                return False
-                
-            # Compare responses
-            return original != altered
-            
-        except Exception:
-            return False
-
-    
     def _make_request(self, url: str) -> Optional[str]:
         try:
             response = self.session.get(
@@ -313,25 +179,19 @@ class SqlScan:
                 headers=self.get_random_headers(),
                 timeout=REQUEST_TIMEOUT,
                 allow_redirects=False,
-                verify=True
+                verify=True  # Secure verification ON
             )
             return response.text
         except Exception:
             return None
 
-    
     def _make_request_with_ssl_fallback(self, url: str) -> Optional[str]:
         try:
             ctx = ssl.create_default_context()
             ctx.minimum_version = ssl.TLSVersion.TLSv1_2
             if hasattr(ssl.TLSVersion, "TLSv1_3"):
                 ctx.maximum_version = ssl.TLSVersion.TLSv1_3
-            try:
-                ctx.options |= ssl.OP_NO_COMPRESSION
-            except Exception:
-                pass
-    
-            response = self.session.get(
+            response = requests.get(
                 url,
                 headers=self.get_random_headers(),
                 timeout=15,
