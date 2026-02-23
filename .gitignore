@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+venv/
+env/
+.venv/
+.env/
+
+# DorkHunter runtime outputs (contain potentially sensitive data — never commit)
+scanned_urls.txt
+scanner.log
+report.csv
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.DS_Store
+Thumbs.db
