@@ -100,7 +100,6 @@ python DorkHunter.py -q
 ├── 📄 user_agents.txt    — Browser User-Agent strings for rotation
 ├── 📄 requirements.txt   — Pinned Python dependencies
 ├── 📄 README.md          — This file
-├── 📄 LICENSE            — License
 ├── 📄 scanner.log        — Auto-created: warnings, errors, debug entries
 ├── 📄 scanned_urls.txt   — Auto-created: deduplication log (capped at 10 000 entries)
 └── 📄 report.csv         — Auto-created when you choose to save results
@@ -115,6 +114,7 @@ python DorkHunter.py -q
 - 🤖 **robots.txt is enforced automatically** — URLs disallowed by the target's robots.txt are skipped
 - ⚖️ **Use only on systems you own or have explicit written permission to test**
 - 📉 Polite random delays between requests minimise Serper.dev quota usage and reduce server load
+- 📌 This project is for **educational purposes only** — use responsibly
 
 ---
 
@@ -136,24 +136,12 @@ Key tunable constants at the top of `DorkHunter.py`:
 
 ---
 
-## 🛠️ Tech Stack
-
-<div align="center"> <img src="https://skillicons.dev/icons?i=py,vscode,github,git" alt="Tech Stack" width="240"/> </div>
-
----
-
 ## 🌟 Contributing
 
 Found a bug? Have an improvement?
 1. Fork the repository
 2. Create your feature branch
 3. Submit a pull request
-
----
-
-## 📜 License
-
-This project is for **educational purposes only**. Use responsibly and only on systems you are authorised to test.
 
 ---
 
