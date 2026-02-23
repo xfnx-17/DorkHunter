@@ -101,7 +101,7 @@ class SqlScan:
         # HTTP adapter is intentionally required: this scanner targets arbitrary URLs,
         # including HTTP-only endpoints that are the actual vulnerability scan targets.
         # Reviewed and accepted: cleartext HTTP is a by-design requirement here.
-        session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retry_strategy))  # NOSONAR (python:S5332)
+        session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retry_strategy))
         return session
 
     def initialize_components(self):
