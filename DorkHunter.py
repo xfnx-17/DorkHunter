@@ -528,7 +528,32 @@ class SqlScan:
     # ------------------------------------------------------------------
     # Main scan loop
     # ------------------------------------------------------------------
-    def find_vulnerable_urls(self, dork: str, max_vulnerable: int) -> List[str]:
+    def _collect_results(
+        self,
+        valid_urls: List[str],
+        results: List[Optional[bool]],
+        vulnerable_urls: List[str],
+        max_vulnerable: int,
+    ) -> bool:
+        """Process one batch of scan results, appending hits to *vulnerable_urls*.
+
+        Returns True when the *max_vulnerable* cap has been reached so the
+        caller can stop the outer scan loop early.
+        """
+        for url, result in zip(valid_urls, results):
+            if result is True:
+                vulnerable_urls.append(url)
+                self._log(f"\n[+] VULNERABLE: {url}")
+            elif result is False:
+                self._vlog(f"[ ] CLEAN: {url}")
+            else:
+                self._vlog(f"[~] SKIPPED: {url}")
+
+            if len(vulnerable_urls) >= max_vulnerable:
+                return True
+        return False
+
+    def find_vulnerable_urls(self, dork: str, max_vulnerable: int) -> List[str]:  # S3776
         vulnerable_urls: List[str] = []
         page = 1
 
@@ -554,17 +579,8 @@ class SqlScan:
             with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
                 results = list(executor.map(self.check_vulnerability, valid_urls))
 
-            for u, result in zip(valid_urls, results):
-                if result is True:
-                    vulnerable_urls.append(u)
-                    self._log(f"\n[+] VULNERABLE: {u}")
-                elif result is False:
-                    self._vlog(f"[ ] CLEAN: {u}")
-                elif result is None:
-                    self._vlog(f"[~] SKIPPED: {u}")
-
-                if len(vulnerable_urls) >= max_vulnerable:
-                    break
+            if self._collect_results(valid_urls, results, vulnerable_urls, max_vulnerable):
+                break
 
             page += 1
             time.sleep(random.uniform(*DELAY_BETWEEN_REQUESTS))
