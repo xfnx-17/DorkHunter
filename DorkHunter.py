@@ -641,25 +641,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_api_credentials(verbose: bool, quiet: bool) -> str:
-    if not quiet:
-        clear_console()
-        print(center_text(BANNER))
-        print(center_text("Powered by Serper.dev — Free Google Search API (no credit card required)"))
-        print(center_text("Get your free API key at: https://serper.dev"))
-        if verbose:
-            print(center_text("[verbose mode ON]"))
-    return getpass.getpass("\nYour Serper.dev API key (input hidden): ").strip()
-
-
-def get_dork_and_options() -> tuple:
-    dork     = input('Dork (example: inurl:product?id=): ').strip()
-    max_vuln = input(f'Max vulnerable URLs to find (number, default {DEFAULT_MAX_VULNERABLE_URLS}): ').strip()
-    max_vuln = int(max_vuln) if max_vuln.isdigit() else DEFAULT_MAX_VULNERABLE_URLS
-    save_rep = input("Save results to CSV? (Y/N): ").strip().lower() == 'y'
-    return dork, max_vuln, save_rep
-
-
 def write_report(vulnerable_urls: List[str], filename: str = DEFAULT_REPORT_FILE):
     with open(filename, 'w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
@@ -667,40 +648,59 @@ def write_report(vulnerable_urls: List[str], filename: str = DEFAULT_REPORT_FILE
         writer.writerows([[url] for url in vulnerable_urls])
 
 
+def _print_scan_results(vulnerable_urls: List[str], quiet: bool, save_report: bool):
+    """Prints scan results to console and optionally saves them to a CSV file."""
+    if vulnerable_urls:
+        if not quiet:
+            print("\n[+] Vulnerable URLs found:")
+            for i, url in enumerate(vulnerable_urls, 1):
+                print(f"  {i}. {url}")
+        if save_report:
+            write_report(vulnerable_urls)
+            if not quiet:
+                print(f"\n[*] Results saved to {DEFAULT_REPORT_FILE}")
+    else:
+        if not quiet:
+            print("\n[-] No vulnerable URLs found")
+
+
+def _run_scan_loop(scanner: SqlScan, args: argparse.Namespace):
+    """Handles the main scan loop, allowing multiple scans."""
+    while True:
+        dork     = input('Dork (example: inurl:product?id=): ').strip()
+        max_vuln = input(f'Max vulnerable URLs to find (number, default {DEFAULT_MAX_VULNERABLE_URLS}): ').strip()
+        max_vuln = int(max_vuln) if max_vuln.isdigit() else DEFAULT_MAX_VULNERABLE_URLS
+        save_rep = input("Save results to CSV? (Y/N): ").strip().lower() == 'y'
+
+        if not args.quiet:
+            clear_console()
+            print("[*] Scan started...\n")
+
+        vulnerable_urls = scanner.find_vulnerable_urls(dork, max_vuln)
+        _print_scan_results(vulnerable_urls, args.quiet, save_rep)
+
+        choice = input("\n[?] Run another scan? (y/n): ").lower()
+        if choice != 'y':
+            if not args.quiet:
+                print("\n[*] Exiting. Goodbye!")
+            break
+
+
 def main():
     args = parse_args()
 
     try:
-        api_key = get_api_credentials(args.verbose, args.quiet)
+        if not args.quiet:
+            clear_console()
+            print(center_text(BANNER))
+            print(center_text("Powered by Serper.dev — Free Google Search API (no credit card required)"))
+            print(center_text("Get your free API key at: https://serper.dev"))
+            if args.verbose:
+                print(center_text("[verbose mode ON]"))
+        api_key = getpass.getpass("\nYour Serper.dev API key (input hidden): ").strip()
         scanner = SqlScan(api_key, verbose=args.verbose, quiet=args.quiet)
 
-        while True:
-            dork, max_vuln, save_report = get_dork_and_options()
-
-            if not args.quiet:
-                clear_console()
-                print("[*] Scan started...\n")
-
-            vulnerable_urls = scanner.find_vulnerable_urls(dork, max_vuln)
-
-            if vulnerable_urls:
-                if not args.quiet:
-                    print("\n[+] Vulnerable URLs found:")
-                    for i, url in enumerate(vulnerable_urls, 1):
-                        print(f"  {i}. {url}")
-                if save_report:
-                    write_report(vulnerable_urls)
-                    if not args.quiet:
-                        print(f"\n[*] Results saved to {DEFAULT_REPORT_FILE}")
-            else:
-                if not args.quiet:
-                    print("\n[-] No vulnerable URLs found")
-
-            choice = input("\n[?] Run another scan? (y/n): ").lower()
-            if choice != 'y':
-                if not args.quiet:
-                    print("\n[*] Exiting. Goodbye!")
-                break
+        _run_scan_loop(scanner, args)
 
     except KeyboardInterrupt:
         print("\n[!] Scan interrupted by user")
