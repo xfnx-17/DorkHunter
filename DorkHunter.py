@@ -5,6 +5,7 @@ import time
 import ssl
 import logging
 import getpass
+import secrets
 import requests
 from concurrent.futures import ThreadPoolExecutor
 from difflib import SequenceMatcher
@@ -138,14 +139,14 @@ class SqlScan:
 
     def get_random_headers(self) -> Dict[str, str]:
         return {
-            'User-Agent': random.choice(self.user_agents),
+            'User-Agent': secrets.choice(self.user_agents),
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.9',
             'Accept-Encoding': 'gzip, deflate, br',
             'DNT': '1',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
-            'X-Forwarded-For': ".".join(str(random.randint(1, 254)) for _ in range(4)),
+            'X-Forwarded-For': ".".join(str(secrets.randbelow(254) + 1) for _ in range(4)),
         }
 
     def _with_param(self, url: str, param: str, value: str) -> str:
