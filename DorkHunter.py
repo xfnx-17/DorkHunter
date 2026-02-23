@@ -168,7 +168,7 @@ class SqlScan:
         # HTTP adapter is intentionally required: this scanner targets arbitrary URLs,
         # including HTTP-only endpoints that are the actual vulnerability scan targets.
         # Reviewed and accepted: cleartext HTTP is a by-design requirement here.
-        session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retry_strategy))
+        session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retry_strategy))  # NOSONAR (python:S5332)
         return session
 
     # ------------------------------------------------------------------
@@ -553,7 +553,7 @@ class SqlScan:
                 return True
         return False
 
-    def find_vulnerable_urls(self, dork: str, max_vulnerable: int) -> List[str]:  # S3776
+    def find_vulnerable_urls(self, dork: str, max_vulnerable: int) -> List[str]:
         vulnerable_urls: List[str] = []
         page = 1
 
@@ -664,24 +664,30 @@ def _print_scan_results(vulnerable_urls: List[str], quiet: bool, save_report: bo
             print("\n[-] No vulnerable URLs found")
 
 
-def _run_scan_loop(scanner: SqlScan, args: argparse.Namespace):
-    """Handles the main scan loop, allowing multiple scans."""
-    while True:
-        dork     = input('Dork (example: inurl:product?id=): ').strip()
-        max_vuln = input(f'Max vulnerable URLs to find (number, default {DEFAULT_MAX_VULNERABLE_URLS}): ').strip()
-        max_vuln = int(max_vuln) if max_vuln.isdigit() else DEFAULT_MAX_VULNERABLE_URLS
-        save_rep = input("Save results to CSV? (Y/N): ").strip().lower() == 'y'
+def get_dork_and_options() -> tuple:
+    """Prompt the user for dork, result cap, and report preference."""
+    dork     = input('Dork (example: inurl:product?id=): ').strip()
+    max_vuln = input(f'Max vulnerable URLs to find (number, default {DEFAULT_MAX_VULNERABLE_URLS}): ').strip()
+    max_vuln = int(max_vuln) if max_vuln.isdigit() else DEFAULT_MAX_VULNERABLE_URLS
+    save_rep = input("Save results to CSV? (Y/N): ").strip().lower() == 'y'
+    return dork, max_vuln, save_rep
 
-        if not args.quiet:
+
+def _run_scan_loop(scanner: SqlScan, quiet: bool) -> None:
+    """Interactive scan loop — runs until the user chooses to stop."""
+    while True:
+        dork, max_vuln, save_rep = get_dork_and_options()
+
+        if not quiet:
             clear_console()
             print("[*] Scan started...\n")
 
         vulnerable_urls = scanner.find_vulnerable_urls(dork, max_vuln)
-        _print_scan_results(vulnerable_urls, args.quiet, save_rep)
+        _print_scan_results(vulnerable_urls, quiet, save_rep)
 
         choice = input("\n[?] Run another scan? (y/n): ").lower()
         if choice != 'y':
-            if not args.quiet:
+            if not quiet:
                 print("\n[*] Exiting. Goodbye!")
             break
 
@@ -700,7 +706,7 @@ def main():
         api_key = getpass.getpass("\nYour Serper.dev API key (input hidden): ").strip()
         scanner = SqlScan(api_key, verbose=args.verbose, quiet=args.quiet)
 
-        _run_scan_loop(scanner, args)
+        _run_scan_loop(scanner, args.quiet)
 
     except KeyboardInterrupt:
         print("\n[!] Scan interrupted by user")
