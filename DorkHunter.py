@@ -90,7 +90,7 @@ class SqlScan:
 
     def _configure_session(self) -> requests.Session:
         session = requests.Session()
-        base_retry_kwargs = dict(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
+        base_retry_kwargs = {'total': 3, 'backoff_factor': 1, 'status_forcelist': [429, 500, 502, 503, 504]}
         try:
             retry_strategy = Retry(allowed_methods={"HEAD", "GET", "OPTIONS"}, **base_retry_kwargs)
         except TypeError:
