@@ -256,27 +256,35 @@ class SqlScan:
             logger.debug(f"SSL fallback also failed for {url}: {e}")
             return None
 
-    def _test_payloads(self, url: str, parsed, query) -> bool:
-        for param, values in query.items():
-            # Boolean-based and time-based checks are per-parameter, not per-payload.
-            # Run them once per param to avoid massive redundant requests.
-            for value in values:
-                for payload in self.payloads:
-                    try:
-                        q = parse_qs(parsed.query, keep_blank_values=True)
-                        q[param] = [value + payload]
-                        test_url = urlunparse(parsed._replace(query=urlencode(q, doseq=True)))
-                        response = self._make_request(test_url)
-                        if response is None:
-                            response = self._make_request_with_ssl_fallback(test_url)
-                            if response is None:
-                                continue
-                        if self._detect_sql_errors(response):
-                            return True
-                    except Exception as e:
-                        logger.debug(f"Payload test error on {url}: {e}")
+    def _fetch_response(self, test_url: str) -> Optional[str]:
+        """Try primary request, then fall back to SSL-relaxed request if needed."""
+        response = self._make_request(test_url)
+        if response is None:
+            response = self._make_request_with_ssl_fallback(test_url)
+        return response
+
+    def _test_error_based(self, url: str, parsed, param: str, values: List[str]) -> bool:
+        """Test all payloads against a single parameter for error-based SQLi."""
+        for value in values:
+            for payload in self.payloads:
+                try:
+                    q = parse_qs(parsed.query, keep_blank_values=True)
+                    q[param] = [value + payload]
+                    test_url = urlunparse(parsed._replace(query=urlencode(q, doseq=True)))
+                    response = self._fetch_response(test_url)
+                    if response is None:
                         continue
-            # Run structural checks once per parameter after all payloads
+                    if self._detect_sql_errors(response):
+                        return True
+                except Exception as e:
+                    logger.debug(f"Payload test error on {url}: {e}")
+        return False
+
+    def _test_payloads(self, url: str, parsed, query) -> bool:
+        """Orchestrator: run error-based, boolean-based and time-based checks per parameter."""
+        for param, values in query.items():
+            if self._test_error_based(url, parsed, param, values):
+                return True
             if self._check_boolean_based(url, param):
                 return True
             if self._check_time_based(url, param):
